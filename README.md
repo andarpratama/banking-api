@@ -8,11 +8,6 @@ See [docs/README.md](docs/README.md) for BRD/PRD/SRS, ADR, OpenAPI, testing, sec
 
 Docker files live under [`docker/`](docker/).
 
-## Agent entrypoints
+## Local agent tooling (not in remote)
 
-| File | Purpose |
-|------|---------|
-| [AGENTS.md](AGENTS.md) | Short agent entry instructions |
-| [CLAUDE.md](CLAUDE.md) | Always-on technical rules |
-
-Local AI task workflow lives in **`.ai/`** (gitignored). Keep that folder on your machine; it is not pushed to the remote.
+These stay on your machine (gitignored): `.ai/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md`.

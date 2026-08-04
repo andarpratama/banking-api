@@ -96,3 +96,7 @@ temp/
 
 # Local Cursor rules/settings — keep on machine, not in remote
 .cursor/
+
+# Local agent entry docs — keep on machine, not in remote
+AGENTS.md
+CLAUDE.md
