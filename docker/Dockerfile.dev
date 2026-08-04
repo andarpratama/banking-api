@@ -1,0 +1,23 @@
+# Development Dockerfile with live reload support
+
+FROM maven:3.9-eclipse-temurin-21
+
+LABEL maintainer="Banking API Team"
+LABEL version="1.0-dev"
+LABEL description="Development image with live reload"
+
+WORKDIR /app
+
+# Copy files
+COPY pom.xml .
+COPY src ./src
+
+# Expose ports
+EXPOSE 8080 5005
+
+# Environment
+ENV JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+ENV SPRING_PROFILES_ACTIVE=dev
+
+# Run with live reload
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.arguments=--spring.devtools.livereload.enabled=true"]
