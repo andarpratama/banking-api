@@ -1,0 +1,5 @@
+# Dev profile — extended in T-004
+spring:
+  config:
+    activate:
+      on-profile: dev
