@@ -1,54 +1,47 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.dev
-    container_name: banking-api-dev
-    ports:
-      - "8080:8080"
-      - "5005:5005"  # Debug port
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/banking_api
-      SPRING_DATASOURCE_USERNAME: banking_user
-      SPRING_DATASOURCE_PASSWORD: SecurePassword123!
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      LOGGING_LEVEL_ROOT: DEBUG
-      JAVA_DEBUG_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-    volumes:
-      - ..:/app
-      - ~/.m2:/root/.m2  # Maven cache
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - banking_network
-
+  # PostgreSQL Database
   postgres:
     image: postgres:17-alpine
     container_name: banking-postgres-dev
     environment:
-      POSTGRES_DB: banking_api
-      POSTGRES_USER: banking_user
-      POSTGRES_PASSWORD: SecurePassword123!
+      POSTGRES_DB: ${POSTGRES_DB:-banking_api}
+      POSTGRES_USER: ${POSTGRES_USER:-banking_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SecurePassword123!}
+      POSTGRES_INITDB_ARGS: "-c shared_preload_libraries=pg_stat_statements"
     ports:
       - "5432:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-banking_user} -d ${POSTGRES_DB:-banking_api}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - banking_network
+    restart: unless-stopped
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: banking-redis-dev
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - banking_network
+    restart: unless-stopped
 
+  # pgAdmin for Database Management
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: banking-pgadmin-dev
@@ -61,9 +54,16 @@ services:
       - postgres
     networks:
       - banking_network
+    restart: unless-stopped
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
 
 volumes:
   postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  pgadmin_dev_data:
     driver: local
 
 networks:
