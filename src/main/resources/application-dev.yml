@@ -1,5 +1,28 @@
-# Dev profile — extended in T-004
 spring:
   config:
     activate:
       on-profile: dev
+
+  # Local defaults align with docker/docker-compose.dev.yml (Postgres + Redis on localhost)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/banking_api}
+    username: ${SPRING_DATASOURCE_USERNAME:banking_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:changeme}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+
+logging:
+  level:
+    root: INFO
+    com.company.banking: DEBUG
+    org.springframework.web: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
