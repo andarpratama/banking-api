@@ -1,0 +1,92 @@
+# Compiled class files
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle (if used later)
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE - IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IDE - VS Code / Cursor
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+credentials/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Test / coverage
+coverage/
+.nyc_output/
+*.exec
+.jacoco/
+test-output/
+
+# Docker local overrides
+docker-compose.override.yml
+
+# Local data volumes
+data/
+postgres-data/
+redis-data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+
+# Claude / local agent state
+.claude/
