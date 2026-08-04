@@ -7,7 +7,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/banking_api}
     username: ${SPRING_DATASOURCE_USERNAME:banking_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:changeme}
+    password: ${SPRING_DATASOURCE_PASSWORD:SecurePassword123!}
 
   data:
     redis:
