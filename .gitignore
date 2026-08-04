@@ -90,3 +90,6 @@ temp/
 
 # Claude / local agent state
 .claude/
+
+# Local AI agent workflow (backlog/tasks) — keep on machine, not in remote
+.ai/
