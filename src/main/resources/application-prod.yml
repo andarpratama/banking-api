@@ -1,0 +1,31 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # Prod requires env overrides — do not rely on local defaults
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+
+logging:
+  level:
+    root: WARN
+    com.company.banking: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

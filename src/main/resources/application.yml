@@ -1,6 +1,23 @@
 spring:
   application:
     name: banking-api
+  # Shared placeholders — override via env / profile. No real secrets in repo.
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:banking_api}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:banking_user}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:changeme}}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:${REDIS_HOST:localhost}}
+      port: ${SPRING_DATA_REDIS_PORT:${REDIS_PORT:6379}}
+      password: ${SPRING_DATA_REDIS_PASSWORD:${REDIS_PASSWORD:}}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+  # API base path /api/v1 is applied via controller @RequestMapping (not servlet context-path)
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-dev-only-min-32-chars-long!!}
+    access-token-expiration-seconds: ${JWT_EXPIRATION:3600}
+    refresh-token-expiration-seconds: ${JWT_REFRESH_EXPIRATION:604800}
