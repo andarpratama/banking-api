@@ -1,4 +1,4 @@
 /**
- * config package — skeleton placeholder (T-002).
+ * Cross-cutting Spring configuration (OpenAPI, Redis, etc.).
  */
 package com.company.banking.config;

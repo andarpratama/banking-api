@@ -8,14 +8,27 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/banking_api}
     username: ${SPRING_DATASOURCE_USERNAME:banking_user}
     password: ${SPRING_DATASOURCE_PASSWORD:SecurePassword123!}
+    hikari:
+      pool-name: banking-hikari-dev
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 20
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
 
   flyway:
     enabled: true
@@ -25,6 +38,7 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
       password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: 2s
 
 logging:
   level:
