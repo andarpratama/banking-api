@@ -6,6 +6,25 @@
 
 ---
 
+## 0. System Endpoints
+
+### 0.1 Health Check
+
+```
+GET /health
+```
+
+Public — no authentication required (must stay on the security whitelist when JWT is enabled).
+
+Response 200 OK:
+```json
+{
+  "status": "UP"
+}
+```
+
+---
+
 ## 1. Authentication Endpoints
 
 ### 1.1 Register
@@ -695,6 +714,7 @@ Response 200 OK:
 - JWT Bearer token in `Authorization` header
 - Access token expiration: 1 hour
 - Refresh token expiration: 7 days
+- Public (no auth): `GET /health`
 
 ### Authorization
 - RBAC with ADMIN and CUSTOMER roles
