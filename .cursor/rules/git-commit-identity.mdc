@@ -1,0 +1,32 @@
+---
+description: Git commit identity and no Cursor co-author attribution
+alwaysApply: true
+---
+
+# Git Commit Identity
+
+When creating or amending commits in this project:
+
+- Author and committer **must** be:
+  - Name: `andarpratama`
+  - Email: `andar.webdev@gmail.com`
+- Set identity via env vars for that command only (`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, `GIT_COMMITTER_EMAIL`). Do **not** change global/local `git config` unless the user explicitly asks.
+
+## No Cursor Co-Author
+
+- Do **not** include `Co-authored-by: Cursor` / `cursoragent@cursor.com` (or any Cursor attribution trailer) in commit messages.
+- After any `git commit` / `git commit --amend`, verify with `git log -1 --format=full` or `git cat-file -p HEAD`.
+- If Cursor injected a `Co-authored-by` trailer, rewrite with `git commit-tree` (not a normal `git commit`) so the trailer is not re-added:
+
+```bash
+export GIT_AUTHOR_NAME='andarpratama'
+export GIT_AUTHOR_EMAIL='andar.webdev@gmail.com'
+export GIT_COMMITTER_NAME='andarpratama'
+export GIT_COMMITTER_EMAIL='andar.webdev@gmail.com'
+# Root commit (no parent):
+NEW=$(git commit-tree "$(git rev-parse 'HEAD^{tree}')" -m 'commit message here')
+# Non-root: add -p "$(git rev-parse 'HEAD^')" before -m
+git reset --soft "$NEW"
+```
+
+- GitHub should show only `andarpratama`, not `andarpratama and cursoragent`.

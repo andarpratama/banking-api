@@ -1,0 +1,14 @@
+---
+description: Follow .ai agent workflow — one backlog task at a time
+alwaysApply: true
+---
+
+# AI Workflow
+
+Follow [AGENTS.md](../../AGENTS.md) and [.ai/prompt.md](../../.ai/prompt.md):
+
+1. Read `.ai/backlog.md` → **Current task** only.
+2. Read the linked `.ai/tasks/<task>.md` fully.
+3. Load only **DoD applies** + **Architecture sections** listed in that task.
+4. Complete **exactly one** task, then update backlog + local git commit (no push).
+5. Do not bulk-read `@.ai/` or all of `docs/` at once.
