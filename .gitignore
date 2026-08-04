@@ -93,3 +93,6 @@ temp/
 
 # Local AI agent workflow (backlog/tasks) — keep on machine, not in remote
 .ai/
+
+# Local Cursor rules/settings — keep on machine, not in remote
+.cursor/
