@@ -16,6 +16,8 @@ spring:
 
   flyway:
     enabled: true
+    # Prod: schema/reference migrations only — no classpath:db/dev seed users.
+    locations: classpath:db/migration
 
   data:
     redis:

@@ -28,6 +28,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: false
+    # Schema + reference data only. Dev user seed lives in classpath:db/dev (profile=dev).
     locations: classpath:db/migration
   data:
     redis:

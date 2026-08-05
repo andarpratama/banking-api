@@ -32,6 +32,8 @@ spring:
 
   flyway:
     enabled: true
+    # Include repeatable R__seed_dev_users.sql — never on prod.
+    locations: classpath:db/migration,classpath:db/dev
 
   data:
     redis:

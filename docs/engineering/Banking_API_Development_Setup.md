@@ -36,6 +36,27 @@ curl http://localhost:8080/api/v1/health
 open http://localhost:8080/swagger-ui.html
 ```
 
+### Dev seed users (profile `dev` only)
+
+Flyway on `SPRING_PROFILES_ACTIVE=dev` applies:
+- `db/migration` — schema + `ADMIN` / `CUSTOMER` roles
+- `db/dev` — repeatable seed users (**not** loaded on `prod`)
+
+| Email | Password | Role | Notes |
+|-------|----------|------|-------|
+| `admin@banking.local` | `SecurePass123!` | `ADMIN` | No customer profile |
+| `customer@banking.local` | `SecurePass123!` | `CUSTOMER` | `CUST-000001` |
+
+Use these after auth endpoints exist (`POST /api/v1/auth/login`). Do **not** use these credentials in production.
+
+```bash
+# Confirm roles + seed after app boot (profile=dev)
+docker compose -f docker/docker-compose.dev.yml exec -T postgres \
+  psql -U banking_user -d banking_api -c "SELECT name FROM roles ORDER BY name;"
+docker compose -f docker/docker-compose.dev.yml exec -T postgres \
+  psql -U banking_user -d banking_api -c "SELECT email FROM users WHERE email LIKE '%@banking.local' ORDER BY email;"
+```
+
 ---
 
 ## 2. IDE Setup
