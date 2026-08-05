@@ -1,12 +1,12 @@
 package com.company.banking.config;
 
+import com.company.banking.security.AccessTokenBlacklist;
 import com.company.banking.security.JwtAccessDeniedHandler;
 import com.company.banking.security.JwtAuthenticationEntryPoint;
 import com.company.banking.security.JwtAuthenticationFilter;
 import com.company.banking.security.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,8 +25,16 @@ public class SecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(
+            JwtService jwtService,
+            AccessTokenBlacklist accessTokenBlacklist
+    ) {
+        return new JwtAuthenticationFilter(jwtService, accessTokenBlacklist);
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                          JwtService jwtService,
+                                          JwtAuthenticationFilter jwtAuthenticationFilter,
                                           JwtAuthenticationEntryPoint authenticationEntryPoint,
                                           JwtAccessDeniedHandler accessDeniedHandler) throws Exception {
         http
@@ -38,15 +46,13 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - no auth required
                         .requestMatchers("/api/v1/health").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtService),
+                        jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
 

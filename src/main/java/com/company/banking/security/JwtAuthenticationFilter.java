@@ -15,10 +15,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final JwtService jwtService;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    private final JwtService jwtService;
+    private final AccessTokenBlacklist accessTokenBlacklist;
+
+    public JwtAuthenticationFilter(JwtService jwtService, AccessTokenBlacklist accessTokenBlacklist) {
         this.jwtService = jwtService;
+        this.accessTokenBlacklist = accessTokenBlacklist;
     }
 
     @Override
@@ -27,7 +30,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = extractToken(request);
 
-            if (token != null && jwtService.isTokenValid(token)) {
+            if (token != null
+                    && jwtService.isTokenValid(token)
+                    && jwtService.isAccessToken(token)
+                    && !accessTokenBlacklist.isBlacklisted(token)) {
                 String username = jwtService.extractUsername(token);
                 List<String> roles = jwtService.extractRoles(token);
 

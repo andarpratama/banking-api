@@ -18,6 +18,11 @@ import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
+
+    public static final String CLAIM_TOKEN_TYPE = "typ";
+    public static final String TOKEN_TYPE_ACCESS = "access";
+    public static final String TOKEN_TYPE_REFRESH = "refresh";
+
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
 
@@ -27,14 +32,14 @@ public class JwtService {
     }
 
     public String generateAccessToken(UserDetails userDetails) {
-        return generateToken(userDetails, jwtProperties.getAccessTokenExpiration());
+        return generateToken(userDetails, jwtProperties.getAccessTokenExpiration(), TOKEN_TYPE_ACCESS);
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return generateToken(userDetails, jwtProperties.getRefreshTokenExpiration());
+        return generateToken(userDetails, jwtProperties.getRefreshTokenExpiration(), TOKEN_TYPE_REFRESH);
     }
 
-    private String generateToken(UserDetails userDetails, long expirationSeconds) {
+    private String generateToken(UserDetails userDetails, long expirationSeconds, String tokenType) {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(expirationSeconds);
 
@@ -46,6 +51,7 @@ public class JwtService {
                 .subject(userDetails.getUsername())
                 .claim("roles", roles)
                 .claim("enabled", userDetails.isEnabled())
+                .claim(CLAIM_TOKEN_TYPE, tokenType)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -53,8 +59,7 @@ public class JwtService {
     }
 
     public String extractUsername(String token) throws JwtException {
-        Claims claims = extractAllClaims(token);
-        return claims.getSubject();
+        return extractAllClaims(token).getSubject();
     }
 
     public List<String> extractRoles(String token) throws JwtException {
@@ -62,6 +67,31 @@ public class JwtService {
         @SuppressWarnings("unchecked")
         List<String> roles = (List<String>) claims.get("roles");
         return roles;
+    }
+
+    public Instant extractExpiration(String token) throws JwtException {
+        return extractAllClaims(token).getExpiration().toInstant();
+    }
+
+    public String extractTokenType(String token) throws JwtException {
+        Object type = extractAllClaims(token).get(CLAIM_TOKEN_TYPE);
+        return type == null ? null : type.toString();
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            return TOKEN_TYPE_ACCESS.equals(extractTokenType(token));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            return TOKEN_TYPE_REFRESH.equals(extractTokenType(token));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public boolean isTokenValid(String token) {
