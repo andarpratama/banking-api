@@ -714,7 +714,9 @@ Response 200 OK:
 - JWT Bearer token in `Authorization` header
 - Access token expiration: 1 hour
 - Refresh token expiration: 7 days
-- Public (no auth): `GET /health`
+- Public (no auth required at filter): `GET /health`, `POST /auth/**`
+- `POST /auth/logout` still requires a valid Bearer access token (validated in the auth service; token is blacklisted on success)
+- Refresh rotation: previous refresh token hash is revoked when a new pair is issued
 
 ### Authorization
 - RBAC with ADMIN and CUSTOMER roles

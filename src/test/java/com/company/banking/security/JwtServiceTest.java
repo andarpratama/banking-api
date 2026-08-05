@@ -7,6 +7,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -124,5 +125,28 @@ class JwtServiceTest {
         String refreshToken = jwtService.generateRefreshToken(testUser);
 
         assertThat(accessToken).isNotEqualTo(refreshToken);
+    }
+
+    @Test
+    void generateAccessToken_shouldMarkTokenTypeAccess() {
+        String token = jwtService.generateAccessToken(testUser);
+
+        assertThat(jwtService.isAccessToken(token)).isTrue();
+        assertThat(jwtService.isRefreshToken(token)).isFalse();
+    }
+
+    @Test
+    void generateRefreshToken_shouldMarkTokenTypeRefresh() {
+        String token = jwtService.generateRefreshToken(testUser);
+
+        assertThat(jwtService.isRefreshToken(token)).isTrue();
+        assertThat(jwtService.isAccessToken(token)).isFalse();
+    }
+
+    @Test
+    void extractExpiration_shouldReturnFutureInstant() {
+        String token = jwtService.generateAccessToken(testUser);
+
+        assertThat(jwtService.extractExpiration(token)).isAfter(Instant.now().minusSeconds(1));
     }
 }

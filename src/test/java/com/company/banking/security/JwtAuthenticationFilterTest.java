@@ -24,8 +24,12 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
+
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private AccessTokenBlacklist accessTokenBlacklist;
 
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     private String testToken;
@@ -34,9 +38,12 @@ class JwtAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
-        jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService);
+        jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService, accessTokenBlacklist);
 
-        secretKey = Keys.hmacShaKeyFor("test-secret-key-that-is-long-enough-for-256-bits-implementation!!".getBytes(StandardCharsets.UTF_8));
+        secretKey = Keys.hmacShaKeyFor(
+                "test-secret-key-that-is-long-enough-for-256-bits-implementation!!"
+                        .getBytes(StandardCharsets.UTF_8)
+        );
         testToken = generateValidToken();
     }
 
@@ -46,6 +53,7 @@ class JwtAuthenticationFilterTest {
                 .subject("testuser@example.com")
                 .claim("roles", Arrays.asList("ROLE_CUSTOMER"))
                 .claim("enabled", true)
+                .claim("typ", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(3600)))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -58,6 +66,8 @@ class JwtAuthenticationFilterTest {
         request.addHeader("Authorization", "Bearer " + testToken);
 
         when(jwtService.isTokenValid(testToken)).thenReturn(true);
+        when(jwtService.isAccessToken(testToken)).thenReturn(true);
+        when(accessTokenBlacklist.isBlacklisted(testToken)).thenReturn(false);
         when(jwtService.extractUsername(testToken)).thenReturn("testuser@example.com");
         when(jwtService.extractRoles(testToken)).thenReturn(Arrays.asList("ROLE_CUSTOMER", "ROLE_ADMIN"));
 
@@ -71,6 +81,23 @@ class JwtAuthenticationFilterTest {
                 .isEqualTo("testuser@example.com");
         assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
                 .hasSize(2);
+    }
+
+    @Test
+    void doFilterInternal_withBlacklistedToken_shouldNotSetAuthentication() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer " + testToken);
+
+        when(jwtService.isTokenValid(testToken)).thenReturn(true);
+        when(jwtService.isAccessToken(testToken)).thenReturn(true);
+        when(accessTokenBlacklist.isBlacklisted(testToken)).thenReturn(true);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
