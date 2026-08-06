@@ -1,5 +1,6 @@
 package com.company.banking.auth.infrastructure.persistence;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,4 +12,6 @@ public interface SpringDataCustomerRepository extends JpaRepository<CustomerJpaE
             nativeQuery = true
     )
     int findMaxCustomerSequence();
+
+    Optional<CustomerJpaEntity> findByUserId(UUID userId);
 }

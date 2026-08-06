@@ -1,5 +1,8 @@
 package com.company.banking.security;
 
+import com.company.banking.auth.infrastructure.persistence.SpringDataCustomerRepository;
+import com.company.banking.auth.infrastructure.persistence.SpringDataUserRepository;
+import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -10,6 +13,17 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SecurityContextHelper {
+
+    private final SpringDataUserRepository userRepository;
+    private final SpringDataCustomerRepository customerRepository;
+
+    public SecurityContextHelper(
+            SpringDataUserRepository userRepository,
+            SpringDataCustomerRepository customerRepository
+    ) {
+        this.userRepository = userRepository;
+        this.customerRepository = customerRepository;
+    }
 
     /**
      * Get the currently authenticated username (email) from security context.
@@ -56,5 +70,24 @@ public class SecurityContextHelper {
      */
     public boolean isCustomer() {
         return hasRole("CUSTOMER");
+    }
+
+    /**
+     * Check if the current authenticated user owns the given customer ID.
+     * Used for ownership-based authorization.
+     *
+     * @param customerId the customer ID to check ownership for
+     * @return true if current user is the owner of this customer, false otherwise
+     */
+    public boolean isOwner(UUID customerId) {
+        String currentEmail = getCurrentUsername();
+        if (currentEmail == null) {
+            return false;
+        }
+
+        return userRepository.findByEmailIgnoreCase(currentEmail)
+                .flatMap(userEntity -> customerRepository.findByUserId(userEntity.getId()))
+                .map(customerEntity -> customerEntity.getId().equals(customerId))
+                .orElse(false);
     }
 }
