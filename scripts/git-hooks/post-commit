@@ -1,0 +1,27 @@
+#!/bin/bash
+# post-commit hook — secondary safety net for .cursor/rules/git-commit-identity.mdc
+#
+# The prepare-commit-msg hook should already strip Cursor trailers before the
+# commit is created. This hook just verifies nothing slipped through (e.g. a
+# commit made without hooks, such as `git commit --no-verify`) and tells you
+# exactly how to fix it if it did.
+
+CURSOR_TRAILER=$(git log -1 --format="%B" | grep -i "Co-authored-by.*[Cc]ursor")
+
+if [ -n "$CURSOR_TRAILER" ]; then
+    echo "WARNING: Cursor co-author trailer detected in last commit!"
+    echo "Trailer: $CURSOR_TRAILER"
+    echo ""
+    echo "This violates .cursor/rules/git-commit-identity.mdc"
+    echo "Fix with (do NOT use --amend, Cursor re-injects the trailer on amend):"
+    echo ""
+    echo "  export GIT_AUTHOR_NAME='andarpratama'"
+    echo "  export GIT_AUTHOR_EMAIL='andar.webdev@gmail.com'"
+    echo "  export GIT_COMMITTER_NAME='andarpratama'"
+    echo "  export GIT_COMMITTER_EMAIL='andar.webdev@gmail.com'"
+    echo "  NEW=\$(git log -1 --format=%B | grep -v -i 'Co-authored-by.*cursor' > /tmp/msg.txt; git commit-tree \"\$(git rev-parse 'HEAD^{tree}')\" -p \"\$(git rev-parse 'HEAD^')\" -F /tmp/msg.txt) && git reset --soft \"\$NEW\""
+    echo ""
+    exit 1
+fi
+
+exit 0

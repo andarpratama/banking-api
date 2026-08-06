@@ -1,0 +1,23 @@
+#!/bin/bash
+# prepare-commit-msg hook — enforces .cursor/rules/git-commit-identity.mdc
+#
+# Automatically strips any Cursor co-author trailer from the commit message
+# BEFORE the commit is created, instead of only detecting it afterwards.
+#
+# Git passes the commit message file path as $1.
+
+COMMIT_MSG_FILE="$1"
+
+if [ -z "$COMMIT_MSG_FILE" ] || [ ! -f "$COMMIT_MSG_FILE" ]; then
+    exit 0
+fi
+
+# Remove any line that looks like a Cursor co-author trailer (case-insensitive),
+# plus a lone blank line left behind directly above it.
+sed -i -E '/^Co-authored-by:.*[Cc]ursor.*$/Id' "$COMMIT_MSG_FILE"
+sed -i -E '/cursoragent@cursor\.com/Id' "$COMMIT_MSG_FILE"
+
+# Collapse trailing blank lines left behind by the removal.
+sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$COMMIT_MSG_FILE"
+
+exit 0

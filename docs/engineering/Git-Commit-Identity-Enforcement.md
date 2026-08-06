@@ -35,51 +35,37 @@ Commit: andarpratama <andar.webdev@gmail.com>
 
 ## Solution
 
-### 1. Post-Commit Hook (Automatic Verification)
+### 1. `prepare-commit-msg` Hook (Primary Defense — Automatic Fix)
 
-Set up a git post-commit hook to automatically detect and reject commits with Cursor trailers.
+A `post-commit`-only hook (v1 of this doc) only **detects** the trailer after the
+commit object already exists — it doesn't stop it from being created or pushed if
+the warning is missed (see Incident History below: this happened twice, T-023 and
+T-030). The fix is a `prepare-commit-msg` hook, which runs **before** the commit is
+created and edits the message file directly, stripping the trailer so it never
+makes it into the commit object at all.
 
-**File:** `.git/hooks/post-commit`
-
-```bash
-#!/bin/bash
-# Post-commit hook to verify no Cursor co-author trailer
-# Enforces .cursor/rules/git-commit-identity.mdc
-
-CURSOR_TRAILER=$(git log -1 --format="%B" | grep -i "Co-authored-by.*[Cc]ursor")
-
-if [ -n "$CURSOR_TRAILER" ]; then
-    echo "⚠️  ERROR: Cursor co-author trailer detected in last commit!"
-    echo "Trailer: $CURSOR_TRAILER"
-    echo ""
-    echo "This violates the git-commit-identity rule."
-    echo "Use git commit-tree to rewrite (see documentation)."
-    exit 1
-fi
-
-exit 0
-```
-
-**Setup:**
+Hooks are tracked in the repo (git does not version `.git/hooks/` itself) under
+`scripts/git-hooks/` and installed per clone with:
 
 ```bash
-mkdir -p .git/hooks
-
-cat > .git/hooks/post-commit << 'HOOK'
-#!/bin/bash
-CURSOR_TRAILER=$(git log -1 --format="%B" | grep -i "Co-authored-by.*[Cc]ursor")
-if [ -n "$CURSOR_TRAILER" ]; then
-    echo "⚠️  ERROR: Cursor co-author trailer detected!"
-    echo "See docs/engineering/Git-Commit-Identity-Enforcement.md"
-    exit 1
-fi
-exit 0
-HOOK
-
-chmod +x .git/hooks/post-commit
+./scripts/install-git-hooks.sh
 ```
 
-### 2. Manual Verification (Before Push)
+Source: `scripts/git-hooks/prepare-commit-msg` (strips `Co-authored-by: ... [Cc]ursor`
+and `cursoragent@cursor.com` lines from the commit message file before commit).
+
+In a Cursor sandbox, installing may require the `all` permission if `.git/hooks`
+is mounted read-only by default (`chmod`/write access denied otherwise).
+
+### 2. `post-commit` Hook (Secondary Safety Net)
+
+Kept as a fallback in case a commit bypasses hooks entirely (e.g. `--no-verify`).
+It only warns — it does not modify the commit — so the `git commit-tree` fix below
+is still needed if it fires.
+
+Source: `scripts/git-hooks/post-commit`.
+
+### 3. Manual Verification (Before Push)
 
 Always verify after committing:
 
@@ -189,10 +175,43 @@ After cleaning commits with proper identity, GitHub updates contributor stats wi
 - Use `git commit-tree` for permanent removal
 - Post-commit hooks should be mandatory
 
+### T-030 Customer Feature (Aug 6, 2026)
+
+**What happened:**
+1. `post-commit` hook existed but was **not executable** (`-rw-r--r--`); a prior
+   sandboxed `chmod +x` attempt had silently failed ("Read-only file system"),
+   so the hook never ran and never warned.
+2. Commit `4fed446` was pushed with the Cursor trailer intact and merged via PR #18.
+3. Caught manually from the GitHub UI (showed `andarpratama and cursoragent`).
+4. Rewrote the commit with `git commit-tree` → `a16a86f`, opened PR #19, merged.
+5. Reset `main` to before both duplicate merges and cherry-picked only the clean
+   commit, then force-pushed `main` to eliminate `4fed446` from history entirely.
+
+**Resolution:**
+1. Confirmed `chmod +x` on `.git/hooks/*` works when the `all` sandbox permission
+   is granted (it was blocked under default sandbox restrictions).
+2. Replaced the detect-only `post-commit` approach with a `prepare-commit-msg`
+   hook that strips the trailer **before** the commit is created — self-healing
+   instead of relying on someone reading a warning.
+3. Moved hook sources into `scripts/git-hooks/` (tracked in git) with an
+   `scripts/install-git-hooks.sh` installer, so the fix survives across clones
+   and fresh sandbox sessions instead of living only in the local `.git/hooks/`.
+
+**Lessons:**
+- A hook that only detects after the fact is not enough if nobody reads the
+  output before pushing — prefer hooks that actively fix the message.
+- `.git/hooks/` is not tracked by git; anything installed there is lost on a
+  fresh clone/session unless there's a tracked install script.
+- Verify hook executability (`ls -la .git/hooks/`) as part of hook setup, not
+  just that the file exists.
+
 ---
 
 ## References
 
 - Rule file: `.cursor/rules/git-commit-identity.mdc`
+- Hook setup guide: `.ai/git-hooks-setup.md`
+- Hook sources: `scripts/git-hooks/prepare-commit-msg`, `scripts/git-hooks/post-commit`
+- Install script: `scripts/install-git-hooks.sh`
 - Agent workflow: `AGENTS.md` (local)
 - Testing strategy: `docs/engineering/Banking_API_Testing_Strategy.md`
