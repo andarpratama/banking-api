@@ -2,6 +2,7 @@ package com.company.banking.account.application;
 
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
+import com.company.banking.account.domain.AccountUnfrozenEvent;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
@@ -12,11 +13,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Account application service — create, read, freeze, close.
+ * Account application service — create, read, freeze, unfreeze, close.
  */
 @Service
 public class AccountService {
@@ -25,17 +27,20 @@ public class AccountService {
     private final CustomerRepository customerRepository;
     private final AccountMapper accountMapper;
     private final SecurityContextHelper securityContextHelper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public AccountService(
             AccountRepository accountRepository,
             CustomerRepository customerRepository,
             AccountMapper accountMapper,
-            SecurityContextHelper securityContextHelper
+            SecurityContextHelper securityContextHelper,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
         this.accountMapper = accountMapper;
         this.securityContextHelper = securityContextHelper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -101,6 +106,18 @@ public class AccountService {
         Account account = requireAccount(accountId);
         Account frozen = account.freeze(Instant.now());
         Account saved = accountRepository.save(frozen);
+        return accountMapper.toStatusResponse(saved);
+    }
+
+    @Transactional
+    public AccountStatusResponse unfreezeAccount(UUID accountId) {
+        Account account = requireAccount(accountId);
+        Instant now = Instant.now();
+        Account unfrozen = account.unfreeze(now);
+        Account saved = accountRepository.save(unfrozen);
+        eventPublisher.publishEvent(
+                new AccountUnfrozenEvent(saved.id(), saved.accountNumber(), saved.updatedAt())
+        );
         return accountMapper.toStatusResponse(saved);
     }
 

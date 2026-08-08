@@ -12,6 +12,7 @@ import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountStatus;
 import com.company.banking.account.domain.AccountType;
+import com.company.banking.account.domain.AccountUnfrozenEvent;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
@@ -26,6 +27,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
 class AccountServiceTest {
 
@@ -33,6 +36,7 @@ class AccountServiceTest {
     private CustomerRepository customerRepository;
     private AccountMapper accountMapper;
     private SecurityContextHelper securityContextHelper;
+    private ApplicationEventPublisher eventPublisher;
     private AccountService accountService;
 
     private UUID customerId;
@@ -44,11 +48,13 @@ class AccountServiceTest {
         customerRepository = mock(CustomerRepository.class);
         accountMapper = new AccountMapper();
         securityContextHelper = mock(SecurityContextHelper.class);
+        eventPublisher = mock(ApplicationEventPublisher.class);
         accountService = new AccountService(
                 accountRepository,
                 customerRepository,
                 accountMapper,
-                securityContextHelper
+                securityContextHelper,
+                eventPublisher
         );
         customerId = UUID.randomUUID();
         accountId = UUID.randomUUID();
@@ -106,6 +112,25 @@ class AccountServiceTest {
 
         assertThat(response.getStatus()).isEqualTo("FROZEN");
         assertThat(response.getAccountNumber()).isEqualTo(active.accountNumber());
+    }
+
+    @Test
+    void unfreezeAccountUpdatesStatusAndPublishesEvent() {
+        Account frozen = sampleAccount(AccountStatus.FROZEN);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(frozen));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AccountStatusResponse response = accountService.unfreezeAccount(accountId);
+
+        assertThat(response.getStatus()).isEqualTo("ACTIVE");
+        assertThat(response.getAccountNumber()).isEqualTo(frozen.accountNumber());
+
+        ArgumentCaptor<AccountUnfrozenEvent> eventCaptor = ArgumentCaptor.forClass(AccountUnfrozenEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        AccountUnfrozenEvent event = eventCaptor.getValue();
+        assertThat(event.accountId()).isEqualTo(accountId);
+        assertThat(event.accountNumber()).isEqualTo(frozen.accountNumber());
+        assertThat(event.occurredAt()).isNotNull();
     }
 
     @Test

@@ -347,7 +347,27 @@ Response 200 OK:
 
 ---
 
-### 3.5 Close Account (Admin)
+### 3.5 Unfreeze Account (Admin)
+
+```
+PATCH /accounts/{accountId}/unfreeze
+Authorization: Bearer {accessToken}
+Roles: ADMIN
+
+Transitions FROZEN → ACTIVE only. Rejects ACTIVE (400 VALIDATION_ERROR) and CLOSED (409 ACCOUNT_CLOSED).
+
+Response 200 OK:
+{
+  "id": "uuid",
+  "accountNumber": "ACC-0000001",
+  "status": "ACTIVE",
+  "updatedAt": "2026-08-04T13:05:00Z"
+}
+```
+
+---
+
+### 3.6 Close Account (Admin)
 
 ```
 PATCH /accounts/{accountId}/close

@@ -144,7 +144,21 @@ public final class Account {
     }
 
     /**
-     * ACTIVE → CLOSED (final). FROZEN accounts must be unfrozen first (T-033).
+     * FROZEN → ACTIVE.
+     */
+    public Account unfreeze(Instant now) {
+        Objects.requireNonNull(now, "now");
+        if (status == AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Account is not frozen");
+        }
+        if (status == AccountStatus.CLOSED) {
+            throw new BusinessException(ErrorCode.ACCOUNT_CLOSED, "Cannot unfreeze a closed account");
+        }
+        return withStatus(AccountStatus.ACTIVE, now);
+    }
+
+    /**
+     * ACTIVE → CLOSED (final). FROZEN accounts must be unfrozen first.
      */
     public Account close(Instant now) {
         Objects.requireNonNull(now, "now");
