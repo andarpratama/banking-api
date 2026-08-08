@@ -80,7 +80,8 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
                 .isEqualTo("testuser@example.com");
         assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
-                .hasSize(2);
+                .extracting(a -> a.getAuthority())
+                .containsExactlyInAnyOrder("ROLE_CUSTOMER", "ROLE_ADMIN");
     }
 
     @Test
