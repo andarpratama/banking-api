@@ -38,8 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 List<String> roles = jwtService.extractRoles(token);
 
                 if (username != null && roles != null) {
+                    // JwtService stores Spring authorities (already ROLE_*); do not prefix again.
                     List<SimpleGrantedAuthority> authorities = roles.stream()
-                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                            .map(JwtAuthenticationFilter::toAuthority)
                             .collect(Collectors.toList());
 
                     UsernamePasswordAuthenticationToken authentication =
@@ -60,5 +61,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return authHeader.substring(7);
         }
         return null;
+    }
+
+    private static SimpleGrantedAuthority toAuthority(String role) {
+        if (role == null || role.isBlank()) {
+            throw new IllegalArgumentException("role must not be blank");
+        }
+        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+        return new SimpleGrantedAuthority(authority);
     }
 }

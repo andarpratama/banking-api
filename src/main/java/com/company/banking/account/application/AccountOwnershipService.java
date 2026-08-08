@@ -1,24 +1,34 @@
 package com.company.banking.account.application;
 
+import com.company.banking.account.domain.AccountRepository;
+import com.company.banking.security.SecurityContextHelper;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for checking if a user owns an account.
- * Used by @PreAuthorize SpEL expressions to enforce ownership-based access control.
+ * Ownership checks for {@code @PreAuthorize} SpEL on account endpoints.
  */
-@Service
+@Service("accountOwnershipService")
 public class AccountOwnershipService {
 
+    private final AccountRepository accountRepository;
+    private final SecurityContextHelper securityContextHelper;
+
+    public AccountOwnershipService(
+            AccountRepository accountRepository,
+            SecurityContextHelper securityContextHelper
+    ) {
+        this.accountRepository = accountRepository;
+        this.securityContextHelper = securityContextHelper;
+    }
+
     /**
-     * Check if the given username (email) owns the given account.
-     *
-     * @param accountId the account ID to check
-     * @param username  the username/email of the user
-     * @return true if the user owns the account, false otherwise
+     * Returns true if the current user owns the account, or if the account does not exist
+     * (so the application layer can return 404 instead of 403).
      */
-    public boolean isOwner(String accountId, String username) {
-        // TODO: implement ownership check by looking up account and comparing with username
-        // For now, return false to be safe
-        return false;
+    public boolean isOwner(UUID accountId) {
+        return accountRepository.findById(accountId)
+                .map(account -> securityContextHelper.isOwner(account.customerId()))
+                .orElse(true);
     }
 }
