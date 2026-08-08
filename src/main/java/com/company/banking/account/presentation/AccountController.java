@@ -1,5 +1,10 @@
 package com.company.banking.account.presentation;
 
+import com.company.banking.account.application.AccountListResponse;
+import com.company.banking.account.application.AccountResponse;
+import com.company.banking.account.application.AccountService;
+import com.company.banking.account.application.AccountStatusResponse;
+import com.company.banking.account.application.CreateAccountRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -7,159 +12,140 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Account endpoints: create, get balance, freeze, close (with RBAC).
- * - ADMIN can freeze/close any account, view any account
- * - CUSTOMER can view only their own accounts, cannot freeze/close
+ * Account endpoints aligned with OpenAPI §3 (create, list, get/balance, freeze, close).
  */
 @RestController
-@RequestMapping("/api/v1/accounts")
+@RequestMapping("/api/v1")
 @Tag(name = "Accounts", description = "Account management (create, balance, freeze, close)")
 public class AccountController {
 
-    /**
-     * Create a new account for the authenticated customer.
-     * POST /api/v1/accounts
-     */
-    @PostMapping
+    private final AccountService accountService;
+
+    public AccountController(AccountService accountService) {
+        this.accountService = accountService;
+    }
+
+    @PostMapping("/accounts")
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
             summary = "Create account",
-            description = "CUSTOMER creates account for themselves. ADMIN creates for any customer."
+            description = "CUSTOMER creates an account for themselves. ADMIN may create for any customer."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
                     description = "Account created",
-                    content = @Content(schema = @Schema(implementation = String.class))
+                    content = @Content(schema = @Schema(implementation = AccountResponse.class))
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Validation error"
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Forbidden"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized"
-            )
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Customer not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    public ResponseEntity<String> createAccount() {
-        // TODO: implement account creation
-        return ResponseEntity.status(201).body("{\"account\": {}}");
+    public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        AccountResponse response = accountService.createAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get account balance.
-     * GET /api/v1/accounts/{accountId}/balance
-     */
-    @GetMapping("/{accountId}/balance")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/customers/{customerId}/accounts")
+    @PreAuthorize("hasRole('ADMIN') or @securityContextHelper.isOwner(#customerId)")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
-            summary = "Get account balance",
-            description = "ADMIN can view any account balance. CUSTOMER can view only their own."
+            summary = "List accounts for customer",
+            description = "ADMIN can list any customer's accounts. CUSTOMER can list only their own."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Account balance",
-                    content = @Content(schema = @Schema(implementation = String.class))
+                    description = "Accounts list",
+                    content = @Content(schema = @Schema(implementation = AccountListResponse.class))
             ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Forbidden - not owner"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Account not found"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized"
-            )
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Customer not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    public ResponseEntity<String> getAccountBalance(@PathVariable String accountId) {
-        // TODO: implement get balance
-        return ResponseEntity.ok("{\"balance\": 0.00}");
+    public ResponseEntity<AccountListResponse> listAccountsForCustomer(@PathVariable UUID customerId) {
+        return ResponseEntity.ok(accountService.listAccountsForCustomer(customerId));
     }
 
-    /**
-     * Freeze account (ADMIN only).
-     * POST /api/v1/accounts/{accountId}/freeze
-     */
-    @PostMapping("/{accountId}/freeze")
+    @GetMapping("/accounts/{accountId}")
+    @PreAuthorize("hasRole('ADMIN') or @accountOwnershipService.isOwner(#accountId)")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Get account by ID",
+            description = "Returns account details including balance and optimistic-lock version. "
+                    + "ADMIN can view any account; CUSTOMER only their own."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Account details (includes balance)",
+                    content = @Content(schema = @Schema(implementation = AccountResponse.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Forbidden - not owner"),
+            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) {
+        return ResponseEntity.ok(accountService.getAccount(accountId));
+    }
+
+    @PatchMapping("/accounts/{accountId}/freeze")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
             summary = "Freeze account",
-            description = "Requires ADMIN role. Freezes an account to prevent transactions."
+            description = "Requires ADMIN. Transitions ACTIVE → FROZEN."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Account frozen"
+                    description = "Account frozen",
+                    content = @Content(schema = @Schema(implementation = AccountStatusResponse.class))
             ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Forbidden - not ADMIN"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Account not found"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized"
-            )
+            @ApiResponse(responseCode = "403", description = "Forbidden - not ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(responseCode = "409", description = "Invalid status transition"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    public ResponseEntity<String> freezeAccount(@PathVariable String accountId) {
-        // TODO: implement freeze
-        return ResponseEntity.ok("{\"status\": \"FROZEN\"}");
+    public ResponseEntity<AccountStatusResponse> freezeAccount(@PathVariable UUID accountId) {
+        return ResponseEntity.ok(accountService.freezeAccount(accountId));
     }
 
-    /**
-     * Close account (ADMIN only).
-     * POST /api/v1/accounts/{accountId}/close
-     */
-    @PostMapping("/{accountId}/close")
+    @PatchMapping("/accounts/{accountId}/close")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
             summary = "Close account",
-            description = "Requires ADMIN role. Closes an account permanently."
+            description = "Requires ADMIN. Transitions ACTIVE → CLOSED (final)."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Account closed"
+                    description = "Account closed",
+                    content = @Content(schema = @Schema(implementation = AccountStatusResponse.class))
             ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Forbidden - not ADMIN"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Account not found"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized"
-            )
+            @ApiResponse(responseCode = "403", description = "Forbidden - not ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(responseCode = "409", description = "Invalid status transition"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    public ResponseEntity<String> closeAccount(@PathVariable String accountId) {
-        // TODO: implement close
-        return ResponseEntity.ok("{\"status\": \"CLOSED\"}");
+    public ResponseEntity<AccountStatusResponse> closeAccount(@PathVariable UUID accountId) {
+        return ResponseEntity.ok(accountService.closeAccount(accountId));
     }
 }
