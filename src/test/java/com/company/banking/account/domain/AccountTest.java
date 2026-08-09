@@ -170,6 +170,72 @@ class AccountTest {
                 });
     }
 
+    @Test
+    void debitDecreasesBalanceOnActiveAccount() {
+        Account funded = activeAccount().credit(Money.ofPositive(new BigDecimal("100.00")), NOW);
+        Instant later = NOW.plusSeconds(30);
+        Money withdrawal = Money.ofPositive(new BigDecimal("40.00"));
+
+        Account debited = funded.debit(withdrawal, later);
+
+        assertThat(debited).isNotSameAs(funded);
+        assertThat(debited.balance().amount()).isEqualByComparingTo("60.00");
+        assertThat(debited.updatedAt()).isEqualTo(later);
+        assertThat(funded.balance().amount()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void debitAllowsExactBalanceBoundary() {
+        Account funded = activeAccount().credit(Money.ofPositive(new BigDecimal("100.00")), NOW);
+
+        Account emptied = funded.debit(Money.ofPositive(new BigDecimal("100.00")), NOW.plusSeconds(1));
+
+        assertThat(emptied.balance().isZero()).isTrue();
+    }
+
+    @Test
+    void debitRejectsInsufficientBalanceByOneCent() {
+        Account funded = activeAccount().credit(Money.ofPositive(new BigDecimal("100.00")), NOW);
+
+        assertThatThrownBy(() -> funded.debit(Money.ofPositive(new BigDecimal("100.01")), NOW.plusSeconds(1)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.INSUFFICIENT_BALANCE);
+                    assertThat(be.getMessage()).isEqualTo(
+                            "Insufficient balance. Available: 100.00, Requested: 100.01"
+                    );
+                });
+    }
+
+    @Test
+    void debitRejectsFrozenAccount() {
+        Account frozen = activeAccount()
+                .credit(Money.ofPositive(new BigDecimal("50.00")), NOW)
+                .freeze(NOW.plusSeconds(1));
+
+        assertThatThrownBy(() -> frozen.debit(Money.ofPositive(new BigDecimal("10.00")), NOW.plusSeconds(2)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_FROZEN);
+                });
+    }
+
+    @Test
+    void debitRejectsClosedAccount() {
+        Account closed = activeAccount()
+                .credit(Money.ofPositive(new BigDecimal("50.00")), NOW)
+                .close(NOW.plusSeconds(1));
+
+        assertThatThrownBy(() -> closed.debit(Money.ofPositive(new BigDecimal("10.00")), NOW.plusSeconds(2)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_CLOSED);
+                });
+    }
+
     private Account activeAccount() {
         return Account.create(
                 ID,

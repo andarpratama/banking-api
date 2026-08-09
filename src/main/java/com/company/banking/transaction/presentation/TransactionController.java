@@ -3,6 +3,8 @@ package com.company.banking.transaction.presentation;
 import com.company.banking.transaction.application.DepositRequest;
 import com.company.banking.transaction.application.DepositService;
 import com.company.banking.transaction.application.TransactionResponse;
+import com.company.banking.transaction.application.WithdrawRequest;
+import com.company.banking.transaction.application.WithdrawService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Transaction endpoints — deposit (OpenAPI §4.1).
+ * Transaction endpoints — deposit (OpenAPI §4.1) and withdraw (OpenAPI §4.2).
  */
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -27,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
 
     private final DepositService depositService;
+    private final WithdrawService withdrawService;
 
-    public TransactionController(DepositService depositService) {
+    public TransactionController(DepositService depositService, WithdrawService withdrawService) {
         this.depositService = depositService;
+        this.withdrawService = withdrawService;
     }
 
     @PostMapping("/deposit")
@@ -54,5 +58,33 @@ public class TransactionController {
     })
     public ResponseEntity<TransactionResponse> deposit(@Valid @RequestBody DepositRequest request) {
         return ResponseEntity.ok(depositService.deposit(request));
+    }
+
+    @PostMapping("/withdraw")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Withdraw funds",
+            description = "Debits an ACTIVE account with sufficient balance and inserts an immutable "
+                    + "WITHDRAW ledger row. CUSTOMER may withdraw from own accounts only; "
+                    + "ADMIN may withdraw from any account."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Withdraw completed",
+                    content = @Content(schema = @Schema(implementation = TransactionResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid amount or validation error"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - not owner"),
+            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Insufficient balance, account frozen, or account closed"
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
+        return ResponseEntity.ok(withdrawService.withdraw(request));
     }
 }

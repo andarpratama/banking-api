@@ -62,6 +62,26 @@ public final class Transaction {
         );
     }
 
+    public static Transaction withdraw(
+            UUID id,
+            UUID accountId,
+            Money amount,
+            Money balanceAfter,
+            String description,
+            Instant createdAt
+    ) {
+        return new Transaction(
+                id,
+                accountId,
+                null,
+                TransactionType.WITHDRAW,
+                amount,
+                balanceAfter,
+                description,
+                createdAt
+        );
+    }
+
     public UUID id() {
         return id;
     }

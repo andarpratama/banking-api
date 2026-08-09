@@ -154,6 +154,36 @@ public final class Account {
     }
 
     /**
+     * Debits the account balance (withdraw). Account must be ACTIVE with sufficient funds.
+     */
+    public Account debit(Money amount, Instant now) {
+        Objects.requireNonNull(amount, "amount");
+        Objects.requireNonNull(now, "now");
+        requireActiveForTransaction();
+        if (!amount.isPositive()) {
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Amount must be greater than zero");
+        }
+        if (this.balance.compareTo(amount) < 0) {
+            throw new BusinessException(
+                    ErrorCode.INSUFFICIENT_BALANCE,
+                    "Insufficient balance. Available: " + this.balance + ", Requested: " + amount
+            );
+        }
+        return new Account(
+                this.id,
+                this.customerId,
+                this.accountNumber,
+                this.accountType,
+                this.currency,
+                this.balance.subtract(amount),
+                this.status,
+                this.version,
+                this.createdAt,
+                now
+        );
+    }
+
+    /**
      * ACTIVE → FROZEN.
      */
     public Account freeze(Instant now) {
