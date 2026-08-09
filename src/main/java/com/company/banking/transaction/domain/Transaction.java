@@ -82,6 +82,54 @@ public final class Transaction {
         );
     }
 
+    /**
+     * Transfer source leg (money out). Shares {@code referenceId} with the CREDIT leg.
+     */
+    public static Transaction debit(
+            UUID id,
+            UUID accountId,
+            UUID referenceId,
+            Money amount,
+            Money balanceAfter,
+            String description,
+            Instant createdAt
+    ) {
+        return new Transaction(
+                id,
+                accountId,
+                Objects.requireNonNull(referenceId, "referenceId"),
+                TransactionType.DEBIT,
+                amount,
+                balanceAfter,
+                description,
+                createdAt
+        );
+    }
+
+    /**
+     * Transfer destination leg (money in). Shares {@code referenceId} with the DEBIT leg.
+     */
+    public static Transaction credit(
+            UUID id,
+            UUID accountId,
+            UUID referenceId,
+            Money amount,
+            Money balanceAfter,
+            String description,
+            Instant createdAt
+    ) {
+        return new Transaction(
+                id,
+                accountId,
+                Objects.requireNonNull(referenceId, "referenceId"),
+                TransactionType.CREDIT,
+                amount,
+                balanceAfter,
+                description,
+                createdAt
+        );
+    }
+
     public UUID id() {
         return id;
     }

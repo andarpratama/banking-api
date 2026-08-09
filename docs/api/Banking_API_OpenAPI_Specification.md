@@ -485,6 +485,8 @@ POST /transactions/transfer
 Content-Type: application/json
 Authorization: Bearer {accessToken}
 
+Roles: ADMIN, CUSTOMER (own source account only)
+
 Request Body:
 {
   "sourceAccountId": "uuid-source",
@@ -495,21 +497,25 @@ Request Body:
 
 Response 200 OK:
 {
-  "referenceId": "REF-abc123def456",
+  "referenceId": "550e8400-e29b-41d4-a716-446655440000",
   "sourceTransaction": {
     "id": "uuid",
     "accountId": "uuid-source",
+    "referenceId": "550e8400-e29b-41d4-a716-446655440000",
     "transactionType": "DEBIT",
     "amount": 250.00,
     "balanceAfter": 4950.50,
+    "description": "Transfer to friend",
     "createdAt": "2026-08-04T12:10:00Z"
   },
   "destinationTransaction": {
     "id": "uuid",
     "accountId": "uuid-dest",
+    "referenceId": "550e8400-e29b-41d4-a716-446655440000",
     "transactionType": "CREDIT",
     "amount": 250.00,
     "balanceAfter": 5500.50,
+    "description": "Transfer to friend",
     "createdAt": "2026-08-04T12:10:00Z"
   }
 }
@@ -528,6 +534,13 @@ Response 409 Conflict:
   "message": "Account was modified by another transaction"
 }
 ```
+
+Notes:
+- Account balances use JPA `@Version` optimistic locking. On conflict the API returns
+  `OPTIMISTIC_LOCK_EXCEPTION` (409). The server does **not** auto-retry; clients should
+  re-read balances and resubmit if appropriate.
+- Dual ledger: one `DEBIT` (source) and one `CREDIT` (destination) sharing the same
+  `referenceId` (UUID). Entire transfer is a single DB transaction (atomic rollback).
 
 ---
 
