@@ -130,6 +130,30 @@ public final class Account {
     }
 
     /**
+     * Credits the account balance (deposit). Account must be ACTIVE.
+     */
+    public Account credit(Money amount, Instant now) {
+        Objects.requireNonNull(amount, "amount");
+        Objects.requireNonNull(now, "now");
+        requireActiveForTransaction();
+        if (!amount.isPositive()) {
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Amount must be greater than zero");
+        }
+        return new Account(
+                this.id,
+                this.customerId,
+                this.accountNumber,
+                this.accountType,
+                this.currency,
+                this.balance.add(amount),
+                this.status,
+                this.version,
+                this.createdAt,
+                now
+        );
+    }
+
+    /**
      * ACTIVE → FROZEN.
      */
     public Account freeze(Instant now) {
@@ -173,6 +197,15 @@ public final class Account {
                 this.createdAt,
                 now
         );
+    }
+
+    private void requireActiveForTransaction() {
+        if (status == AccountStatus.FROZEN) {
+            throw new BusinessException(ErrorCode.ACCOUNT_FROZEN, "Cannot transact on frozen account");
+        }
+        if (status == AccountStatus.CLOSED) {
+            throw new BusinessException(ErrorCode.ACCOUNT_CLOSED, "Cannot transact on closed account");
+        }
     }
 
     private static String requireCurrency(String currency) {
