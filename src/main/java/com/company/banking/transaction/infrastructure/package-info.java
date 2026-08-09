@@ -1,4 +1,4 @@
 /**
- * transaction infrastructure layer — skeleton placeholder (T-002).
+ * transaction infrastructure — JPA ledger adapters and audit hook stubs.
  */
 package com.company.banking.transaction.infrastructure;

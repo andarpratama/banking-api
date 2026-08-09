@@ -374,6 +374,8 @@ POST /transactions/deposit
 Content-Type: application/json
 Authorization: Bearer {accessToken}
 
+Roles: ADMIN, CUSTOMER (own account only)
+
 Request Body:
 {
   "accountId": "uuid",
@@ -405,6 +407,13 @@ Response 409 Conflict:
   "status": 409,
   "code": "ACCOUNT_FROZEN",
   "message": "Cannot transact on frozen account"
+}
+
+Response 409 Conflict:
+{
+  "status": 409,
+  "code": "ACCOUNT_CLOSED",
+  "message": "Cannot transact on closed account"
 }
 ```
 

@@ -1,4 +1,4 @@
 /**
- * transaction presentation layer — skeleton placeholder (T-002).
+ * transaction presentation — REST controllers for money movement endpoints.
  */
 package com.company.banking.transaction.presentation;

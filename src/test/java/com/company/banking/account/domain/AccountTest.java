@@ -130,6 +130,46 @@ class AccountTest {
                 });
     }
 
+    @Test
+    void creditIncreasesBalanceOnActiveAccount() {
+        Account active = activeAccount();
+        Instant later = NOW.plusSeconds(30);
+        Money deposit = Money.ofPositive(new BigDecimal("250.50"));
+
+        Account credited = active.credit(deposit, later);
+
+        assertThat(credited).isNotSameAs(active);
+        assertThat(credited.balance().amount()).isEqualByComparingTo("250.50");
+        assertThat(credited.updatedAt()).isEqualTo(later);
+        assertThat(active.balance().isZero()).isTrue();
+    }
+
+    @Test
+    void creditRejectsFrozenAccount() {
+        Account frozen = activeAccount().freeze(NOW);
+
+        assertThatThrownBy(() -> frozen.credit(Money.ofPositive(new BigDecimal("10.00")), NOW.plusSeconds(1)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_FROZEN);
+                    assertThat(be.getMessage()).isEqualTo("Cannot transact on frozen account");
+                });
+    }
+
+    @Test
+    void creditRejectsClosedAccount() {
+        Account closed = activeAccount().close(NOW);
+
+        assertThatThrownBy(() -> closed.credit(Money.ofPositive(new BigDecimal("10.00")), NOW.plusSeconds(1)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_CLOSED);
+                    assertThat(be.getMessage()).isEqualTo("Cannot transact on closed account");
+                });
+    }
+
     private Account activeAccount() {
         return Account.create(
                 ID,

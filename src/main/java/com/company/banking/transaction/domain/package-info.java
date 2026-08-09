@@ -1,4 +1,4 @@
 /**
- * transaction domain layer — skeleton placeholder (T-002).
+ * transaction domain — immutable ledger model and repository ports.
  */
 package com.company.banking.transaction.domain;
