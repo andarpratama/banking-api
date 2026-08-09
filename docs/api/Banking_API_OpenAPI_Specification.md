@@ -426,6 +426,8 @@ POST /transactions/withdraw
 Content-Type: application/json
 Authorization: Bearer {accessToken}
 
+Roles: ADMIN, CUSTOMER (own account only)
+
 Request Body:
 {
   "accountId": "uuid",
@@ -437,6 +439,7 @@ Response 200 OK:
 {
   "id": "uuid",
   "accountId": "uuid",
+  "referenceId": null,
   "transactionType": "WITHDRAW",
   "amount": 300.00,
   "balanceAfter": 5200.50,
@@ -444,11 +447,32 @@ Response 200 OK:
   "createdAt": "2026-08-04T12:05:00Z"
 }
 
+Response 400 Bad Request:
+{
+  "status": 400,
+  "code": "INVALID_AMOUNT",
+  "message": "Amount must be greater than zero"
+}
+
 Response 409 Conflict:
 {
   "status": 409,
   "code": "INSUFFICIENT_BALANCE",
   "message": "Insufficient balance. Available: 100.00, Requested: 300.00"
+}
+
+Response 409 Conflict:
+{
+  "status": 409,
+  "code": "ACCOUNT_FROZEN",
+  "message": "Cannot transact on frozen account"
+}
+
+Response 409 Conflict:
+{
+  "status": 409,
+  "code": "ACCOUNT_CLOSED",
+  "message": "Cannot transact on closed account"
 }
 ```
 
