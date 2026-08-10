@@ -1,5 +1,10 @@
 package com.company.banking.auth.application;
 
+import com.company.banking.audit.application.AuditPayloadHasher;
+import com.company.banking.audit.application.AuditService;
+import com.company.banking.audit.application.RecordAuditCommand;
+import com.company.banking.audit.domain.AuditActions;
+import com.company.banking.audit.domain.AuditStatus;
 import com.company.banking.auth.domain.CustomerProfile;
 import com.company.banking.auth.domain.CustomerProfileRepository;
 import com.company.banking.auth.domain.RefreshTokenRecord;
@@ -35,6 +40,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final AccessTokenBlacklist accessTokenBlacklist;
+    private final AuditService auditService;
 
     public AuthService(
             UserAccountRepository users,
@@ -43,7 +49,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             JwtProperties jwtProperties,
-            AccessTokenBlacklist accessTokenBlacklist
+            AccessTokenBlacklist accessTokenBlacklist,
+            AuditService auditService
     ) {
         this.users = users;
         this.customers = customers;
@@ -52,6 +59,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
         this.accessTokenBlacklist = accessTokenBlacklist;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -71,6 +79,16 @@ public class AuthService {
         UserAccount user = users.save(normalizedEmail, passwordHash, ROLE_CUSTOMER);
         CustomerProfile customer = customers.create(user.id(), fullName.trim(), phone, address);
 
+        auditService.record(RecordAuditCommand.of(
+                user.email(),
+                "/auth/register",
+                "POST",
+                AuditActions.REGISTER,
+                201,
+                null,
+                AuditPayloadHasher.sha256("userId=" + user.id() + ";customerId=" + customer.id())
+        ));
+
         return new RegisterResponse(
                 user.id().toString(),
                 user.email(),
@@ -85,13 +103,24 @@ public class AuthService {
         String normalizedEmail = email.trim().toLowerCase();
         UserAccount user = users.findByEmail(normalizedEmail)
                 .filter(UserAccount::enabled)
-                .orElseThrow(this::invalidCredentials);
+                .orElse(null);
 
-        if (!passwordEncoder.matches(password, user.passwordHash())) {
+        if (user == null || !passwordEncoder.matches(password, user.passwordHash())) {
+            auditLoginFailure(normalizedEmail);
             throw invalidCredentials();
         }
 
         IssuedTokens tokens = issueTokens(user);
+        auditService.record(RecordAuditCommand.of(
+                user.email(),
+                "/auth/login",
+                "POST",
+                AuditActions.LOGIN,
+                200,
+                null,
+                AuditPayloadHasher.sha256("userId=" + user.id())
+        ));
+
         return new LoginResponse(
                 tokens.accessToken(),
                 tokens.refreshToken(),
@@ -161,7 +190,29 @@ public class AuthService {
 
         if (user != null) {
             refreshTokens.revokeAllForUser(user.id());
+            auditService.record(RecordAuditCommand.of(
+                    user.email(),
+                    "/auth/logout",
+                    "POST",
+                    AuditActions.LOGOUT,
+                    200,
+                    null,
+                    AuditPayloadHasher.sha256("userId=" + user.id())
+            ));
         }
+    }
+
+    private void auditLoginFailure(String email) {
+        auditService.record(new RecordAuditCommand(
+                email,
+                "/auth/login",
+                "POST",
+                AuditActions.LOGIN,
+                401,
+                AuditStatus.FAILURE,
+                null,
+                AuditPayloadHasher.sha256("email=" + email)
+        ));
     }
 
     private IssuedTokens issueTokens(UserAccount user) {

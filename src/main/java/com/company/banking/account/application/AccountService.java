@@ -2,6 +2,10 @@ package com.company.banking.account.application;
 
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
+import com.company.banking.audit.application.AuditPayloadHasher;
+import com.company.banking.audit.application.AuditService;
+import com.company.banking.audit.application.RecordAuditCommand;
+import com.company.banking.audit.domain.AuditActions;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
@@ -25,17 +29,20 @@ public class AccountService {
     private final CustomerRepository customerRepository;
     private final AccountMapper accountMapper;
     private final SecurityContextHelper securityContextHelper;
+    private final AuditService auditService;
 
     public AccountService(
             AccountRepository accountRepository,
             CustomerRepository customerRepository,
             AccountMapper accountMapper,
-            SecurityContextHelper securityContextHelper
+            SecurityContextHelper securityContextHelper,
+            AuditService auditService
     ) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
         this.accountMapper = accountMapper;
         this.securityContextHelper = securityContextHelper;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -72,6 +79,7 @@ public class AccountService {
         );
 
         Account saved = accountRepository.save(account);
+        recordAccountAudit(AuditActions.CREATE_ACCOUNT, "/accounts", "POST", 201, saved.id());
         return accountMapper.toResponse(saved);
     }
 
@@ -101,6 +109,13 @@ public class AccountService {
         Account account = requireAccount(accountId);
         Account frozen = account.freeze(Instant.now());
         Account saved = accountRepository.save(frozen);
+        recordAccountAudit(
+                AuditActions.FREEZE_ACCOUNT,
+                "/accounts/" + accountId + "/freeze",
+                "PATCH",
+                200,
+                saved.id()
+        );
         return accountMapper.toStatusResponse(saved);
     }
 
@@ -109,7 +124,33 @@ public class AccountService {
         Account account = requireAccount(accountId);
         Account closed = account.close(Instant.now());
         Account saved = accountRepository.save(closed);
+        recordAccountAudit(
+                AuditActions.CLOSE_ACCOUNT,
+                "/accounts/" + accountId + "/close",
+                "PATCH",
+                200,
+                saved.id()
+        );
         return accountMapper.toStatusResponse(saved);
+    }
+
+    private void recordAccountAudit(
+            String action,
+            String endpoint,
+            String method,
+            int statusCode,
+            UUID accountId
+    ) {
+        String actor = securityContextHelper.getCurrentUsername();
+        auditService.record(RecordAuditCommand.of(
+                actor != null ? actor : "system",
+                endpoint,
+                method,
+                action,
+                statusCode,
+                null,
+                AuditPayloadHasher.sha256("accountId=" + accountId)
+        ));
     }
 
     private Account requireAccount(UUID accountId) {

@@ -12,6 +12,7 @@ import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountStatus;
 import com.company.banking.account.domain.AccountType;
+import com.company.banking.audit.application.AuditService;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
@@ -33,6 +34,7 @@ class AccountServiceTest {
     private CustomerRepository customerRepository;
     private AccountMapper accountMapper;
     private SecurityContextHelper securityContextHelper;
+    private AuditService auditService;
     private AccountService accountService;
 
     private UUID customerId;
@@ -44,11 +46,13 @@ class AccountServiceTest {
         customerRepository = mock(CustomerRepository.class);
         accountMapper = new AccountMapper();
         securityContextHelper = mock(SecurityContextHelper.class);
+        auditService = mock(AuditService.class);
         accountService = new AccountService(
                 accountRepository,
                 customerRepository,
                 accountMapper,
-                securityContextHelper
+                securityContextHelper,
+                auditService
         );
         customerId = UUID.randomUUID();
         accountId = UUID.randomUUID();
