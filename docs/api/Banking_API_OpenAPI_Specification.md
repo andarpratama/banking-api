@@ -551,16 +551,17 @@ Notes:
 ```
 GET /accounts/{accountId}/transactions?page=0&size=20&sort=createdAt,desc&type=DEPOSIT&fromDate=2026-08-01&toDate=2026-08-04&minAmount=0&maxAmount=10000
 Authorization: Bearer {accessToken}
+Roles: ADMIN or account owner (CUSTOMER)
 
 Query Parameters:
 - page (default: 0): Page number
-- size (default: 20): Page size
-- sort (default: createdAt,desc): Sort field and direction
-- type: DEPOSIT, WITHDRAW, DEBIT, CREDIT
-- fromDate: ISO 8601 format
-- toDate: ISO 8601 format
-- minAmount: Minimum amount filter
-- maxAmount: Maximum amount filter
+- size (default: 20): Page size (max 100)
+- sort (default: createdAt,desc): Sort field and direction — allowed fields: createdAt, amount, transactionType
+- type: DEPOSIT, WITHDRAW, DEBIT, CREDIT (optional)
+- fromDate: ISO 8601 date (yyyy-MM-dd), inclusive start of day UTC (optional)
+- toDate: ISO 8601 date (yyyy-MM-dd), inclusive end of day UTC (optional)
+- minAmount: Minimum amount filter (optional)
+- maxAmount: Maximum amount filter (optional)
 
 Response 200 OK:
 {
@@ -568,7 +569,7 @@ Response 200 OK:
     {
       "id": "uuid",
       "accountId": "uuid",
-      "referenceId": "REF-abc123def456",
+      "referenceId": null,
       "transactionType": "DEPOSIT",
       "amount": 500.00,
       "balanceAfter": 5500.50,
@@ -578,7 +579,7 @@ Response 200 OK:
     {
       "id": "uuid",
       "accountId": "uuid",
-      "referenceId": "REF-xyz789",
+      "referenceId": "550e8400-e29b-41d4-a716-446655440000",
       "transactionType": "DEBIT",
       "amount": 250.00,
       "balanceAfter": 5250.50,
@@ -591,6 +592,8 @@ Response 200 OK:
   "currentPage": 0,
   "pageSize": 20
 }
+
+Errors: 400 validation, 401 unauthorized, 403 not owner, 404 account not found
 ```
 
 ---
