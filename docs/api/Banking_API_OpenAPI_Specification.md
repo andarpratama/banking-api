@@ -680,6 +680,14 @@ Response 200 OK:
 }
 ```
 
+Notes (v1):
+- `activeCustomers`: customers with `is_deleted = false`.
+- `activeAccounts`: accounts with status `ACTIVE`.
+- `totalBalance`: `SUM(accounts.balance)`.
+- Volume windows use UTC calendar days: **daily** = from start of today UTC; **weekly** = from start of (today − 6 days) UTC through now.
+- `deposits` / `withdrawals` map to ledger types `DEPOSIT` / `WITHDRAW`.
+- `transfers` count/amount use ledger type `DEBIT` only (paired `CREDIT` rows are not double-counted).
+
 ---
 
 ## 7. Audit Log Endpoints
