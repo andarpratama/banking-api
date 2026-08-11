@@ -554,23 +554,36 @@ http GET localhost:8080/api/v1/customers \
 
 ## 8. Debugging Tips
 
-### 8.1 Enable Debug Logging
+### 8.1 Structured JSON logging + correlation ID
 
-File: `application-dev.properties`
+Profiles `dev` and `prod` use **JSON console logs** via `logback-spring.xml` + logstash-logback-encoder. Each request gets an `X-Request-Id` (generated if the client omits it); the same value is put in MDC as `requestId` and echoed on the response.
 
-```properties
-# Package-specific debug
-logging.level.com.company.banking=DEBUG
-logging.level.org.springframework.web=DEBUG
-logging.level.org.hibernate.SQL=DEBUG
-logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+```bash
+# Start with profile=dev, then:
+curl -si http://localhost:8080/api/v1/health | grep -i x-request-id
 
-# Save logs to file
-logging.file.name=logs/application.log
-logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+# Console log line (pretty-printed) includes requestId + HTTP access line:
+# {"@timestamp":"...","message":"HTTP GET /api/v1/health status=200 durationMs=3",
+#  "logger_name":"...RequestCorrelationFilter","requestId":"<uuid>","service":"banking-api",...}
 ```
 
-### 8.2 Add Debug Points
+**Do not log** passwords, JWT/refresh tokens, `Authorization` headers, cookies, or full request bodies. Access logs use method + URI path + status only (no query string).
+
+Levels remain overridable in `application-dev.yml` / `application-prod.yml` (`logging.level.*`). Profile `test` keeps plain-text console for Surefire readability.
+
+### 8.2 Enable Debug Logging
+
+File: `application-dev.yml` (or properties equivalent)
+
+```yaml
+logging:
+  level:
+    com.company.banking: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+```
+
+### 8.3 Add Debug Points
 
 IntelliJ IDEA:
 1. Click on line number to add breakpoint
@@ -578,7 +591,7 @@ IntelliJ IDEA:
 3. Set condition: `accountId.equals("specific-id")`
 4. Set "Evaluate and log" to print variables
 
-### 8.3 Common Debugging Scenarios
+### 8.4 Common Debugging Scenarios
 
 #### Transaction Not Rolling Back
 ```java
