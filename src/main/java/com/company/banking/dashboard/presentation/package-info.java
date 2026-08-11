@@ -1,4 +1,4 @@
 /**
- * dashboard presentation layer — skeleton placeholder (T-002).
+ * dashboard presentation layer — HTTP controllers for admin analytics.
  */
 package com.company.banking.dashboard.presentation;
