@@ -1,4 +1,4 @@
 /**
- * audit infrastructure layer — skeleton placeholder (T-002).
+ * audit infrastructure — JPA persistence and transaction audit adapters.
  */
 package com.company.banking.audit.infrastructure;
