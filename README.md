@@ -95,6 +95,10 @@ curl -s -X POST http://localhost:8080/api/v1/auth/login \
 
 More detail: [Development Setup](docs/engineering/Banking_API_Development_Setup.md) · [Docker](docker/).
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push/PR to `main`: JDK 21 setup (Maven dependency cache) + `mvn -B verify` (unit tests, JaCoCo coverage gate). Testcontainers-backed `*IT` integration tests are run selectively per feature (see task `Validation` commands, e.g. `mvn -Dtest='*Transaction*IT' test`) and are not yet part of the default `verify` lifecycle.
+
 ## Documentation
 
 | Area | Link |
