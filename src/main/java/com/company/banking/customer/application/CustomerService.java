@@ -1,9 +1,9 @@
 package com.company.banking.customer.application;
 
+import com.company.banking.common.constants.ErrorCode;
+import com.company.banking.common.exception.BusinessException;
 import com.company.banking.customer.domain.Customer;
-import com.company.banking.customer.domain.CustomerDomainException.CustomerNotFoundException;
 import com.company.banking.customer.domain.CustomerRepository;
-import com.company.banking.customer.domain.CustomerStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +31,9 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public CustomerResponse getCustomer(UUID customerId) {
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + customerId));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Customer not found with ID: " + customerId));
         return customerMapper.toResponse(customer);
     }
 
@@ -64,7 +66,9 @@ public class CustomerService {
     @Transactional
     public CustomerResponse updateCustomer(UUID customerId, UpdateCustomerRequest request) {
         Customer existing = customerRepository.findById(customerId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + customerId));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Customer not found with ID: " + customerId));
         
         Customer updated = existing.updateProfile(
                 request.getFullName(),
@@ -83,7 +87,9 @@ public class CustomerService {
     @Transactional
     public void deleteCustomer(UUID customerId) {
         Customer existing = customerRepository.findById(customerId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + customerId));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Customer not found with ID: " + customerId));
         
         Customer deleted = existing.delete(Instant.now());
         customerRepository.save(deleted);
