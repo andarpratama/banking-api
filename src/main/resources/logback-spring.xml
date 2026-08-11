@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structured JSON logging for dev/prod (logstash-logback-encoder).
+  MDC key requestId is set by RequestCorrelationFilter (X-Request-Id).
+  Test/default profiles keep plain console for readable Surefire output.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <springProperty name="APP_NAME" source="spring.application.name" defaultValue="banking-api"/>
+
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"${APP_NAME}"}</customFields>
+            <!-- Only correlation id from MDC (set by RequestCorrelationFilter). -->
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
+        </encoder>
+    </appender>
+
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Dev: JSON console (readable via jq); levels still overridable via application-dev.yml -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Prod: JSON only for log aggregation -->
+    <springProfile name="prod">
+        <root level="WARN">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+        <logger name="com.company.banking" level="INFO"/>
+    </springProfile>
+
+    <!-- Tests / no profile: plain text -->
+    <springProfile name="test | default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>
