@@ -16,6 +16,9 @@ import com.company.banking.account.domain.AccountType;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
+import com.company.banking.notification.application.NotificationPublisher;
+import com.company.banking.notification.domain.NotificationMessage;
+import com.company.banking.notification.domain.NotificationType;
 import com.company.banking.security.SecurityContextHelper;
 import com.company.banking.transaction.domain.Transaction;
 import com.company.banking.transaction.domain.TransactionRepository;
@@ -34,6 +37,7 @@ class TransferServiceTest {
     private TransactionRepository transactionRepository;
     private SecurityContextHelper securityContextHelper;
     private TransferAuditPort transferAuditPort;
+    private NotificationPublisher notificationPublisher;
     private TransferService transferService;
 
     private UUID ownerId;
@@ -47,12 +51,14 @@ class TransferServiceTest {
         transactionRepository = mock(TransactionRepository.class);
         securityContextHelper = mock(SecurityContextHelper.class);
         transferAuditPort = mock(TransferAuditPort.class);
+        notificationPublisher = mock(NotificationPublisher.class);
         transferService = new TransferService(
                 accountRepository,
                 transactionRepository,
                 new TransactionMapper(),
                 securityContextHelper,
-                transferAuditPort
+                transferAuditPort,
+                notificationPublisher
         );
         ownerId = UUID.randomUUID();
         otherCustomerId = UUID.randomUUID();
@@ -99,6 +105,14 @@ class TransferServiceTest {
                 .extracting(Transaction::referenceId)
                 .containsOnly(response.getReferenceId());
         verify(transferAuditPort).onTransfer(any(), any(), any());
+
+        ArgumentCaptor<NotificationMessage> noticeCaptor = ArgumentCaptor.forClass(NotificationMessage.class);
+        verify(notificationPublisher).publish(noticeCaptor.capture());
+        NotificationMessage notice = noticeCaptor.getValue();
+        assertThat(notice.recipientId()).isEqualTo(ownerId);
+        assertThat(notice.type()).isEqualTo(NotificationType.TRANSFER_COMPLETED);
+        assertThat(notice.body()).contains(response.getReferenceId().toString());
+        assertThat(notice.body()).contains("250.00");
     }
 
     @Test

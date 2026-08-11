@@ -5,6 +5,8 @@ import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
+import com.company.banking.notification.application.NotificationPublisher;
+import com.company.banking.notification.domain.NotificationMessage;
 import com.company.banking.security.SecurityContextHelper;
 import com.company.banking.transaction.domain.Transaction;
 import com.company.banking.transaction.domain.TransactionRepository;
@@ -19,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <p><b>Optimistic locking:</b> account rows use JPA {@code @Version}. Concurrent balance
  * updates that collide surface as {@code OPTIMISTIC_LOCK_EXCEPTION} (409). This service does
  * <em>not</em> auto-retry — the client should re-read balances and resubmit if needed.
+ *
+ * <p>After ledger persistence, publishes a transfer-completed notice via
+ * {@link NotificationPublisher} (logging stub until a vendor adapter exists).
  */
 @Service
 public class TransferService {
@@ -28,19 +33,22 @@ public class TransferService {
     private final TransactionMapper transactionMapper;
     private final SecurityContextHelper securityContextHelper;
     private final TransferAuditPort transferAuditPort;
+    private final NotificationPublisher notificationPublisher;
 
     public TransferService(
             AccountRepository accountRepository,
             TransactionRepository transactionRepository,
             TransactionMapper transactionMapper,
             SecurityContextHelper securityContextHelper,
-            TransferAuditPort transferAuditPort
+            TransferAuditPort transferAuditPort,
+            NotificationPublisher notificationPublisher
     ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.securityContextHelper = securityContextHelper;
         this.transferAuditPort = transferAuditPort;
+        this.notificationPublisher = notificationPublisher;
     }
 
     @Transactional
@@ -111,6 +119,12 @@ public class TransferService {
         Transaction persistedDebit = transactionRepository.save(debitLeg);
         Transaction persistedCredit = transactionRepository.save(creditLeg);
         transferAuditPort.onTransfer(referenceId, persistedDebit, persistedCredit);
+        notificationPublisher.publish(NotificationMessage.transferCompleted(
+                savedSource.customerId(),
+                referenceId,
+                amount.amount().toPlainString(),
+                now
+        ));
 
         return new TransferResponse(
                 referenceId,
