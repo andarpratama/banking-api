@@ -26,8 +26,8 @@
         </root>
     </springProfile>
 
-    <!-- Prod: JSON only for log aggregation -->
-    <springProfile name="prod">
+    <!-- Prod / Production: JSON only for log aggregation -->
+    <springProfile name="prod,production">
         <root level="WARN">
             <appender-ref ref="JSON_CONSOLE"/>
         </root>
