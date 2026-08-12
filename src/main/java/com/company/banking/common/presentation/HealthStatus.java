@@ -1,5 +1,7 @@
 package com.company.banking.common.presentation;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 /**
  * Readiness probe response with detailed dependency statuses.
  *
@@ -12,5 +14,6 @@ package com.company.banking.common.presentation;
  * @param database database connectivity status
  * @param cache Redis cache connectivity status
  */
+@JsonPropertyOrder({"status", "database", "cache"})
 public record HealthStatus(String status, String database, String cache) {
 }
