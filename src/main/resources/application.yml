@@ -40,6 +40,18 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   # API base path /api/v1 is applied via controller @RequestMapping (not servlet context-path)
+  # gzip JSON/text responses > 1KB (client must send Accept-Encoding: gzip)
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types:
+      - application/json
+      - application/xml
+      - text/html
+      - text/xml
+      - text/plain
+      - text/css
+      - application/javascript
 
 app:
   jwt:
