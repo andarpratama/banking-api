@@ -762,6 +762,7 @@ Response 200 OK:
 | DUPLICATE_EMAIL | 400 | Email already registered |
 | SAME_ACCOUNT_TRANSFER | 409 | Source and destination are same |
 | OPTIMISTIC_LOCK_EXCEPTION | 409 | Concurrent modification detected |
+| RATE_LIMIT_EXCEEDED | 429 | Too many requests in the current window |
 
 ---
 
@@ -785,15 +786,28 @@ Response 200 OK:
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
+Response security headers (v1):
+- `Strict-Transport-Security: max-age=31536000 ; includeSubDomains` (effective on HTTPS)
+- `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'`
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+
 ---
 
 ## 10. Rate Limiting
 
-- 100 requests per minute per user
+- Global: **100 requests per minute** per authenticated user (fallback: client IP)
+- Auth endpoints (`/api/v1/auth/**`): **20 requests per minute** per client IP (stricter anti-abuse)
+- Excluded: `GET /api/v1/health`, Swagger UI / OpenAPI docs
+- Backend: Redis (default, multi-instance) or in-memory (`app.rate-limit.backend=memory`)
+- On exceed: HTTP **429** with code `RATE_LIMIT_EXCEEDED`
 - Rate limit headers in response:
   - `X-RateLimit-Limit: 100`
   - `X-RateLimit-Remaining: 95`
   - `X-RateLimit-Reset: 1691145660`
+  - `Retry-After: <seconds>` (when limited)
 
 ---
 

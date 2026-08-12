@@ -22,7 +22,8 @@ public enum ErrorCode {
     INVALID_AMOUNT(400),
     DUPLICATE_EMAIL(400),
     SAME_ACCOUNT_TRANSFER(409),
-    OPTIMISTIC_LOCK_EXCEPTION(409);
+    OPTIMISTIC_LOCK_EXCEPTION(409),
+    RATE_LIMIT_EXCEEDED(429);
 
     private final int httpStatus;
 
