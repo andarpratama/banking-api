@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: banking-postgres-smoke
+    environment:
+      POSTGRES_USER: banking_user
+      POSTGRES_PASSWORD: SecurePassword123!
+      POSTGRES_DB: banking_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_smoke_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banking_user -d banking_api"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - banking_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: banking-redis-smoke
+    command: redis-server --appendonly yes --requirepass RedisPassword123!
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_smoke_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - banking_network
+
+  api:
+    image: banking-api:latest
+    container_name: banking-api-smoke
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/banking_api
+      SPRING_DATASOURCE_USERNAME: banking_user
+      SPRING_DATASOURCE_PASSWORD: SecurePassword123!
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: RedisPassword123!
+      JWT_SECRET: your-super-secret-jwt-key-min-32-characters-required
+      JWT_EXPIRATION: 3600
+      JWT_REFRESH_EXPIRATION: 604800
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_COM_COMPANY_BANKING: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - banking_network
+    restart: on-failure
+
+volumes:
+  postgres_smoke_data:
+    driver: local
+  redis_smoke_data:
+    driver: local
+
+networks:
+  banking_network:
+    driver: bridge
