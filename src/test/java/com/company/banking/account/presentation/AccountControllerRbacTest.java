@@ -73,6 +73,46 @@ class AccountControllerRbacTest {
     }
 
     @Nested
+    @DisplayName("Unfreeze account (PATCH /api/v1/accounts/{accountId}/unfreeze)")
+    class UnfreezeAccountTests {
+
+        @Test
+        @DisplayName("Admin is authorized to unfreeze (404 when account missing)")
+        @WithMockUser(roles = "ADMIN")
+        void adminCanUnfreezeAccount() throws Exception {
+            mockMvc.perform(
+                    patch("/api/v1/accounts/" + ACCOUNT_ID + "/unfreeze")
+                            .accept(MediaType.APPLICATION_JSON)
+                            .with(csrf())
+            )
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Customer cannot unfreeze account (403)")
+        @WithMockUser(roles = "CUSTOMER")
+        void customerCannotUnfreezeAccount() throws Exception {
+            mockMvc.perform(
+                    patch("/api/v1/accounts/" + ACCOUNT_ID + "/unfreeze")
+                            .accept(MediaType.APPLICATION_JSON)
+                            .with(csrf())
+            )
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Unauthenticated user gets 401")
+        void unauthenticatedUserGets401() throws Exception {
+            mockMvc.perform(
+                    patch("/api/v1/accounts/" + ACCOUNT_ID + "/unfreeze")
+                            .accept(MediaType.APPLICATION_JSON)
+                            .with(csrf())
+            )
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Nested
     @DisplayName("Close account (PATCH /api/v1/accounts/{accountId}/close)")
     class CloseAccountTests {
 

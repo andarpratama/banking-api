@@ -23,11 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * Testcontainers flow: auth → customer context → open account → freeze / close,
+ * Testcontainers flow: auth → customer context → open account → freeze / unfreeze / close,
  * plus cross-customer account access forbidden.
- * <p>
- * Close is exercised on a separate ACTIVE account because domain rules reject
- * closing a FROZEN account until unfreeze (T-033).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -52,8 +49,8 @@ class AccountLifecycleIT extends AbstractPostgresRedisIT {
     }
 
     @Test
-    @DisplayName("auth → open account → admin freeze; open second account → admin close")
-    void ownershipLifecycleFreezeAndClose() throws Exception {
+    @DisplayName("auth → open account → admin freeze → unfreeze → close")
+    void ownershipLifecycleFreezeUnfreezeAndClose() throws Exception {
         AuthApiHelper.RegisteredUser customer = auth.register(
                 "acct-" + System.nanoTime() + "@example.com",
                 PASSWORD,
@@ -61,11 +58,10 @@ class AccountLifecycleIT extends AbstractPostgresRedisIT {
         );
         String customerToken = auth.loginAccessToken(customer.email(), PASSWORD);
 
-        String freezeTargetId = createAccount(customerToken, customer.customerId(), "100.00");
-        String closeTargetId = createAccount(customerToken, customer.customerId(), "50.00");
+        String accountId = createAccount(customerToken, customer.customerId(), "100.00");
 
         mockMvc.perform(
-                        get("/api/v1/accounts/" + freezeTargetId)
+                        get("/api/v1/accounts/" + accountId)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + customerToken)
                                 .accept(MediaType.APPLICATION_JSON)
                 )
@@ -79,7 +75,7 @@ class AccountLifecycleIT extends AbstractPostgresRedisIT {
         String adminToken = auth.loginAccessToken(adminEmail, PASSWORD);
 
         mockMvc.perform(
-                        patch("/api/v1/accounts/" + freezeTargetId + "/freeze")
+                        patch("/api/v1/accounts/" + accountId + "/freeze")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                                 .accept(MediaType.APPLICATION_JSON)
                 )
@@ -87,7 +83,15 @@ class AccountLifecycleIT extends AbstractPostgresRedisIT {
                 .andExpect(jsonPath("$.status").value("FROZEN"));
 
         mockMvc.perform(
-                        patch("/api/v1/accounts/" + closeTargetId + "/close")
+                        patch("/api/v1/accounts/" + accountId + "/unfreeze")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mockMvc.perform(
+                        patch("/api/v1/accounts/" + accountId + "/close")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                                 .accept(MediaType.APPLICATION_JSON)
                 )

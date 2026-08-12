@@ -11,6 +11,7 @@ public final class AuditActions {
 
     public static final String CREATE_ACCOUNT = "CREATE_ACCOUNT";
     public static final String FREEZE_ACCOUNT = "FREEZE_ACCOUNT";
+    public static final String UNFREEZE_ACCOUNT = "UNFREEZE_ACCOUNT";
     public static final String CLOSE_ACCOUNT = "CLOSE_ACCOUNT";
 
     public static final String DEPOSIT = "DEPOSIT";

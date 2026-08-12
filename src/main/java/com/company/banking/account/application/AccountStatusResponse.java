@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Response for freeze / close status transitions (OpenAPI §3.4 / §3.5).
+ * Response for freeze / unfreeze / close status transitions (OpenAPI §3.4–§3.6).
  */
 public class AccountStatusResponse {
 

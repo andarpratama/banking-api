@@ -26,11 +26,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Account endpoints aligned with OpenAPI §3 (create, list, get/balance, freeze, close).
+ * Account endpoints aligned with OpenAPI §3 (create, list, get/balance, freeze, unfreeze, close).
  */
 @RestController
 @RequestMapping("/api/v1")
-@Tag(name = "Accounts", description = "Account management (create, balance, freeze, close)")
+@Tag(name = "Accounts", description = "Account management (create, balance, freeze, unfreeze, close)")
 public class AccountController {
 
     private final AccountService accountService;
@@ -125,6 +125,29 @@ public class AccountController {
     })
     public ResponseEntity<AccountStatusResponse> freezeAccount(@PathVariable UUID accountId) {
         return ResponseEntity.ok(accountService.freezeAccount(accountId));
+    }
+
+    @PatchMapping("/accounts/{accountId}/unfreeze")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Unfreeze account",
+            description = "Requires ADMIN. Transitions FROZEN → ACTIVE only."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Account unfrozen",
+                    content = @Content(schema = @Schema(implementation = AccountStatusResponse.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Forbidden - not ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(responseCode = "409", description = "Invalid status transition (e.g. closed)"),
+            @ApiResponse(responseCode = "400", description = "Account is not frozen"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<AccountStatusResponse> unfreezeAccount(@PathVariable UUID accountId) {
+        return ResponseEntity.ok(accountService.unfreezeAccount(accountId));
     }
 
     @PatchMapping("/accounts/{accountId}/close")
