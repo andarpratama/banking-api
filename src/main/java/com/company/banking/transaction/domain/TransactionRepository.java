@@ -1,8 +1,10 @@
 package com.company.banking.transaction.domain;
 
+import com.company.banking.common.money.Money;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -50,4 +52,18 @@ public interface TransactionRepository {
             BigDecimal minAmount,
             BigDecimal maxAmount
     );
+
+    /**
+     * All ledger rows for an account in {@code [fromDate, toDate]}, oldest first.
+     */
+    List<Transaction> findByAccountInPeriod(
+            UUID accountId,
+            Instant fromDate,
+            Instant toDate
+    );
+
+    /**
+     * {@code balanceAfter} of the latest ledger row strictly before {@code before}, if any.
+     */
+    Optional<Money> findBalanceAfterBefore(UUID accountId, Instant before);
 }

@@ -652,6 +652,17 @@ Errors: 400 validation, 401 unauthorized, 403 not owner, 404 account not found
 ```
 GET /accounts/{accountId}/statement?fromDate=2026-08-01&toDate=2026-08-04
 Authorization: Bearer {accessToken}
+Roles: ADMIN or account owner (CUSTOMER)
+
+Query Parameters:
+- fromDate: ISO 8601 date (yyyy-MM-dd), inclusive start of day UTC (required)
+- toDate: ISO 8601 date (yyyy-MM-dd), inclusive end of day UTC (required)
+
+Notes:
+- openingBalance is the balanceAfter of the latest ledger row strictly before fromDate (0.00 if none)
+- closingBalance is the balanceAfter of the last ledger row in the period (openingBalance if none)
+- transactions are ordered oldest-first by createdAt
+- totalDeposits / totalWithdrawals / totalDebits / totalCredits sum amounts by type in the period
 
 Response 200 OK:
 {
@@ -678,6 +689,8 @@ Response 200 OK:
     }
   ]
 }
+
+Errors: 400 validation (missing dates or fromDate after toDate), 401 unauthorized, 403 not owner, 404 account not found
 ```
 
 ---

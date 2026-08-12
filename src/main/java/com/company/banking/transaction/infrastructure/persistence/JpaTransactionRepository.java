@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
@@ -93,6 +94,33 @@ public class JpaTransactionRepository implements TransactionRepository {
         return springDataRepository.count(historySpec(
                 accountId, type, fromDate, toDate, minAmount, maxAmount
         ));
+    }
+
+    @Override
+    public List<Transaction> findByAccountInPeriod(
+            UUID accountId,
+            Instant fromDate,
+            Instant toDate
+    ) {
+        Specification<TransactionJpaEntity> spec = historySpec(
+                accountId, null, fromDate, toDate, null, null
+        );
+        Sort sort = Sort.by(Sort.Direction.ASC, "createdAt");
+        return springDataRepository.findAll(spec, sort).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<Money> findBalanceAfterBefore(UUID accountId, Instant before) {
+        Specification<TransactionJpaEntity> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("accountId"), accountId),
+                cb.lessThan(root.get("createdAt"), before)
+        );
+        Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return springDataRepository.findAll(spec, pageable).getContent().stream()
+                .findFirst()
+                .map(entity -> Money.of(entity.getBalanceAfter()));
     }
 
     private static Specification<TransactionJpaEntity> historySpec(
