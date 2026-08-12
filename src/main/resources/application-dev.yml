@@ -56,6 +56,9 @@ management:
 
 # Local FE defaults (Vite / CRA). Override with CORS_ALLOWED_ORIGINS (comma-separated).
 app:
+  rate-limit:
+    # Prefer Redis when docker-compose.dev is up; override with RATE_LIMIT_BACKEND=memory if needed.
+    backend: ${RATE_LIMIT_BACKEND:redis}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000}
     allow-credentials: true

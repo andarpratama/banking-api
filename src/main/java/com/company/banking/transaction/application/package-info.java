@@ -1,4 +1,4 @@
 /**
- * transaction application layer — skeleton placeholder (T-002).
+ * transaction application — deposit/withdraw (and later transfer) use cases.
  */
 package com.company.banking.transaction.application;

@@ -1,5 +1,6 @@
 package com.company.banking.auth.application;
 
+import com.company.banking.audit.application.AuditService;
 import com.company.banking.auth.domain.CustomerProfile;
 import com.company.banking.auth.domain.CustomerProfileRepository;
 import com.company.banking.auth.domain.RefreshTokenRecord;
@@ -48,6 +49,8 @@ class AuthServiceTest {
     private JwtService jwtService;
     @Mock
     private AccessTokenBlacklist accessTokenBlacklist;
+    @Mock
+    private AuditService auditService;
 
     private JwtProperties jwtProperties;
     private AuthService authService;
@@ -65,7 +68,8 @@ class AuthServiceTest {
                 passwordEncoder,
                 jwtService,
                 jwtProperties,
-                accessTokenBlacklist
+                accessTokenBlacklist,
+                auditService
         );
     }
 

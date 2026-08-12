@@ -51,6 +51,9 @@ management:
         include: health
 
 app:
+  rate-limit:
+    enabled: true
+    backend: memory
   cors:
     allowed-origins: http://localhost:3000
     allow-credentials: true

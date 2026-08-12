@@ -13,6 +13,7 @@ import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountStatus;
 import com.company.banking.account.domain.AccountType;
 import com.company.banking.account.domain.AccountUnfrozenEvent;
+import com.company.banking.audit.application.AuditService;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
@@ -37,6 +38,7 @@ class AccountServiceTest {
     private AccountMapper accountMapper;
     private SecurityContextHelper securityContextHelper;
     private ApplicationEventPublisher eventPublisher;
+    private AuditService auditService;
     private AccountService accountService;
 
     private UUID customerId;
@@ -49,12 +51,14 @@ class AccountServiceTest {
         accountMapper = new AccountMapper();
         securityContextHelper = mock(SecurityContextHelper.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        auditService = mock(AuditService.class);
         accountService = new AccountService(
                 accountRepository,
                 customerRepository,
                 accountMapper,
                 securityContextHelper,
-                eventPublisher
+                eventPublisher,
+                auditService
         );
         customerId = UUID.randomUUID();
         accountId = UUID.randomUUID();
@@ -115,8 +119,9 @@ class AccountServiceTest {
     }
 
     @Test
-    void unfreezeAccountUpdatesStatusAndPublishesEvent() {
+    void unfreezeAccountUpdatesStatusRecordsAuditAndPublishesEvent() {
         Account frozen = sampleAccount(AccountStatus.FROZEN);
+        when(securityContextHelper.getCurrentUsername()).thenReturn("admin");
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(frozen));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -125,6 +130,7 @@ class AccountServiceTest {
         assertThat(response.getStatus()).isEqualTo("ACTIVE");
         assertThat(response.getAccountNumber()).isEqualTo(frozen.accountNumber());
 
+        verify(auditService).record(any());
         ArgumentCaptor<AccountUnfrozenEvent> eventCaptor = ArgumentCaptor.forClass(AccountUnfrozenEvent.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
         AccountUnfrozenEvent event = eventCaptor.getValue();

@@ -30,7 +30,7 @@ class AuditControllerRbacTest {
     @WithMockUser(roles = "ADMIN")
     void adminCanListAuditLogs() throws Exception {
         mockMvc.perform(
-                get("/api/v1/audit/logs")
+                get("/api/v1/audit-logs")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
         )
@@ -42,7 +42,7 @@ class AuditControllerRbacTest {
     @WithMockUser(roles = "CUSTOMER")
     void customerCannotListAuditLogs() throws Exception {
         mockMvc.perform(
-                get("/api/v1/audit/logs")
+                get("/api/v1/audit-logs")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
         )
@@ -53,7 +53,7 @@ class AuditControllerRbacTest {
     @DisplayName("Unauthenticated user gets 401")
     void unauthenticatedUserGets401() throws Exception {
         mockMvc.perform(
-                get("/api/v1/audit/logs")
+                get("/api/v1/audit-logs")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
         )

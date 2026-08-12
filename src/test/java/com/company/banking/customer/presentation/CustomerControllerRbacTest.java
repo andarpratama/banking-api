@@ -4,6 +4,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class CustomerControllerRbacTest {
+
+    private static final UUID CUSTOMER_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Autowired
     private MockMvc mockMvc;
@@ -71,37 +74,34 @@ class CustomerControllerRbacTest {
     class GetCustomerProfileTests {
 
         @Test
-        @DisplayName("Admin can view any customer profile")
+        @DisplayName("Admin is authorized to view profile (404 when customer missing)")
         @WithMockUser(roles = "ADMIN")
         void adminCanViewAnyProfile() throws Exception {
-            String customerId = "test-customer-id";
             mockMvc.perform(
-                    get("/api/v1/customers/" + customerId)
+                    get("/api/v1/customers/" + CUSTOMER_ID)
                             .accept(MediaType.APPLICATION_JSON)
                             .with(csrf())
             )
-                    .andExpect(status().isOk());
+                    .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Customer viewing own profile succeeds (pending implementation)")
-        @WithMockUser(username = "test-customer-id", roles = "CUSTOMER")
-        void customerCanViewOwnProfile() throws Exception {
-            // Note: The actual ownership check is deferred to application layer
-            // For now, this tests that the endpoint doesn't reject based on role alone
+        @DisplayName("Customer cannot view another profile (403)")
+        @WithMockUser(username = "other@example.com", roles = "CUSTOMER")
+        void customerCannotViewOtherProfile() throws Exception {
             mockMvc.perform(
-                    get("/api/v1/customers/test-customer-id")
+                    get("/api/v1/customers/" + CUSTOMER_ID)
                             .accept(MediaType.APPLICATION_JSON)
                             .with(csrf())
             )
-                    .andExpect(status().isOk());
+                    .andExpect(status().isForbidden());
         }
 
         @Test
         @DisplayName("Unauthenticated user gets 401")
         void unauthenticatedUserGets401() throws Exception {
             mockMvc.perform(
-                    get("/api/v1/customers/some-id")
+                    get("/api/v1/customers/" + CUSTOMER_ID)
                             .accept(MediaType.APPLICATION_JSON)
                             .with(csrf())
             )

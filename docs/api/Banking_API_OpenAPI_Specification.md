@@ -8,7 +8,7 @@
 
 ## 0. System Endpoints
 
-### 0.1 Health Check
+### 0.1 Health Check (Legacy)
 
 ```
 GET /health
@@ -16,10 +16,59 @@ GET /health
 
 Public — no authentication required (must stay on the security whitelist when JWT is enabled).
 
+**Deprecated:** Use `/health/live` or `/health/ready` for Kubernetes probes.
+
 Response 200 OK:
 ```json
 {
   "status": "UP"
+}
+```
+
+---
+
+### 0.2 Liveness Probe (Kubernetes)
+
+```
+GET /health/live
+```
+
+Public — Kubernetes liveness probe. Fast check (< 10ms) that the application process is running.  
+Does NOT validate dependencies. Used by K8s to detect dead pods and restart them.
+
+Response 200 OK:
+```json
+{
+  "status": "UP"
+}
+```
+
+---
+
+### 0.3 Readiness Probe (Kubernetes)
+
+```
+GET /health/ready
+```
+
+Public — Kubernetes readiness probe. Validates critical dependencies (PostgreSQL, Redis).  
+Used by K8s to route traffic only to ready pods.
+
+Response 200 OK (ready to serve traffic):
+```json
+{
+  "status": "UP",
+  "database": "UP",
+  "cache": "UP"
+}
+```
+
+Response 503 Service Unavailable (not ready):
+```json
+{
+  "status": "DOWN",
+  "database": "DOWN",
+  "cache": "UP"
 }
 ```
 
@@ -394,6 +443,8 @@ POST /transactions/deposit
 Content-Type: application/json
 Authorization: Bearer {accessToken}
 
+Roles: ADMIN, CUSTOMER (own account only)
+
 Request Body:
 {
   "accountId": "uuid",
@@ -426,6 +477,13 @@ Response 409 Conflict:
   "code": "ACCOUNT_FROZEN",
   "message": "Cannot transact on frozen account"
 }
+
+Response 409 Conflict:
+{
+  "status": 409,
+  "code": "ACCOUNT_CLOSED",
+  "message": "Cannot transact on closed account"
+}
 ```
 
 ---
@@ -436,6 +494,8 @@ Response 409 Conflict:
 POST /transactions/withdraw
 Content-Type: application/json
 Authorization: Bearer {accessToken}
+
+Roles: ADMIN, CUSTOMER (own account only)
 
 Request Body:
 {
@@ -448,6 +508,7 @@ Response 200 OK:
 {
   "id": "uuid",
   "accountId": "uuid",
+  "referenceId": null,
   "transactionType": "WITHDRAW",
   "amount": 300.00,
   "balanceAfter": 5200.50,
@@ -455,11 +516,32 @@ Response 200 OK:
   "createdAt": "2026-08-04T12:05:00Z"
 }
 
+Response 400 Bad Request:
+{
+  "status": 400,
+  "code": "INVALID_AMOUNT",
+  "message": "Amount must be greater than zero"
+}
+
 Response 409 Conflict:
 {
   "status": 409,
   "code": "INSUFFICIENT_BALANCE",
   "message": "Insufficient balance. Available: 100.00, Requested: 300.00"
+}
+
+Response 409 Conflict:
+{
+  "status": 409,
+  "code": "ACCOUNT_FROZEN",
+  "message": "Cannot transact on frozen account"
+}
+
+Response 409 Conflict:
+{
+  "status": 409,
+  "code": "ACCOUNT_CLOSED",
+  "message": "Cannot transact on closed account"
 }
 ```
 
@@ -472,6 +554,8 @@ POST /transactions/transfer
 Content-Type: application/json
 Authorization: Bearer {accessToken}
 
+Roles: ADMIN, CUSTOMER (own source account only)
+
 Request Body:
 {
   "sourceAccountId": "uuid-source",
@@ -482,21 +566,25 @@ Request Body:
 
 Response 200 OK:
 {
-  "referenceId": "REF-abc123def456",
+  "referenceId": "550e8400-e29b-41d4-a716-446655440000",
   "sourceTransaction": {
     "id": "uuid",
     "accountId": "uuid-source",
+    "referenceId": "550e8400-e29b-41d4-a716-446655440000",
     "transactionType": "DEBIT",
     "amount": 250.00,
     "balanceAfter": 4950.50,
+    "description": "Transfer to friend",
     "createdAt": "2026-08-04T12:10:00Z"
   },
   "destinationTransaction": {
     "id": "uuid",
     "accountId": "uuid-dest",
+    "referenceId": "550e8400-e29b-41d4-a716-446655440000",
     "transactionType": "CREDIT",
     "amount": 250.00,
     "balanceAfter": 5500.50,
+    "description": "Transfer to friend",
     "createdAt": "2026-08-04T12:10:00Z"
   }
 }
@@ -516,6 +604,13 @@ Response 409 Conflict:
 }
 ```
 
+Notes:
+- Account balances use JPA `@Version` optimistic locking. On conflict the API returns
+  `OPTIMISTIC_LOCK_EXCEPTION` (409). The server does **not** auto-retry; clients should
+  re-read balances and resubmit if appropriate.
+- Dual ledger: one `DEBIT` (source) and one `CREDIT` (destination) sharing the same
+  `referenceId` (UUID). Entire transfer is a single DB transaction (atomic rollback).
+
 ---
 
 ## 5. Transaction History Endpoints
@@ -525,16 +620,17 @@ Response 409 Conflict:
 ```
 GET /accounts/{accountId}/transactions?page=0&size=20&sort=createdAt,desc&type=DEPOSIT&fromDate=2026-08-01&toDate=2026-08-04&minAmount=0&maxAmount=10000
 Authorization: Bearer {accessToken}
+Roles: ADMIN or account owner (CUSTOMER)
 
 Query Parameters:
 - page (default: 0): Page number
-- size (default: 20): Page size
-- sort (default: createdAt,desc): Sort field and direction
-- type: DEPOSIT, WITHDRAW, DEBIT, CREDIT
-- fromDate: ISO 8601 format
-- toDate: ISO 8601 format
-- minAmount: Minimum amount filter
-- maxAmount: Maximum amount filter
+- size (default: 20): Page size (max 100)
+- sort (default: createdAt,desc): Sort field and direction — allowed fields: createdAt, amount, transactionType
+- type: DEPOSIT, WITHDRAW, DEBIT, CREDIT (optional)
+- fromDate: ISO 8601 date (yyyy-MM-dd), inclusive start of day UTC (optional)
+- toDate: ISO 8601 date (yyyy-MM-dd), inclusive end of day UTC (optional)
+- minAmount: Minimum amount filter (optional)
+- maxAmount: Maximum amount filter (optional)
 
 Response 200 OK:
 {
@@ -542,7 +638,7 @@ Response 200 OK:
     {
       "id": "uuid",
       "accountId": "uuid",
-      "referenceId": "REF-abc123def456",
+      "referenceId": null,
       "transactionType": "DEPOSIT",
       "amount": 500.00,
       "balanceAfter": 5500.50,
@@ -552,7 +648,7 @@ Response 200 OK:
     {
       "id": "uuid",
       "accountId": "uuid",
-      "referenceId": "REF-xyz789",
+      "referenceId": "550e8400-e29b-41d4-a716-446655440000",
       "transactionType": "DEBIT",
       "amount": 250.00,
       "balanceAfter": 5250.50,
@@ -565,6 +661,8 @@ Response 200 OK:
   "currentPage": 0,
   "pageSize": 20
 }
+
+Errors: 400 validation, 401 unauthorized, 403 not owner, 404 account not found
 ```
 
 ---
@@ -651,6 +749,14 @@ Response 200 OK:
 }
 ```
 
+Notes (v1):
+- `activeCustomers`: customers with `is_deleted = false`.
+- `activeAccounts`: accounts with status `ACTIVE`.
+- `totalBalance`: `SUM(accounts.balance)`.
+- Volume windows use UTC calendar days: **daily** = from start of today UTC; **weekly** = from start of (today − 6 days) UTC through now.
+- `deposits` / `withdrawals` map to ledger types `DEPOSIT` / `WITHDRAW`.
+- `transfers` count/amount use ledger type `DEBIT` only (paired `CREDIT` rows are not double-counted).
+
 ---
 
 ## 7. Audit Log Endpoints
@@ -725,6 +831,7 @@ Response 200 OK:
 | DUPLICATE_EMAIL | 400 | Email already registered |
 | SAME_ACCOUNT_TRANSFER | 409 | Source and destination are same |
 | OPTIMISTIC_LOCK_EXCEPTION | 409 | Concurrent modification detected |
+| RATE_LIMIT_EXCEEDED | 429 | Too many requests in the current window |
 
 ---
 
@@ -748,15 +855,28 @@ Response 200 OK:
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
+Response security headers (v1):
+- `Strict-Transport-Security: max-age=31536000 ; includeSubDomains` (effective on HTTPS)
+- `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'`
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+
 ---
 
 ## 10. Rate Limiting
 
-- 100 requests per minute per user
+- Global: **100 requests per minute** per authenticated user (fallback: client IP)
+- Auth endpoints (`/api/v1/auth/**`): **20 requests per minute** per client IP (stricter anti-abuse)
+- Excluded: `GET /api/v1/health`, Swagger UI / OpenAPI docs
+- Backend: Redis (default, multi-instance) or in-memory (`app.rate-limit.backend=memory`)
+- On exceed: HTTP **429** with code `RATE_LIMIT_EXCEEDED`
 - Rate limit headers in response:
   - `X-RateLimit-Limit: 100`
   - `X-RateLimit-Remaining: 95`
   - `X-RateLimit-Reset: 1691145660`
+  - `Retry-After: <seconds>` (when limited)
 
 ---
 

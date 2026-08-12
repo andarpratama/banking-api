@@ -1,4 +1,4 @@
 /**
- * audit presentation layer — skeleton placeholder (T-002).
+ * audit presentation — ADMIN audit log listing.
  */
 package com.company.banking.audit.presentation;

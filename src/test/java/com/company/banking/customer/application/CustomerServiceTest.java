@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.company.banking.customer.domain.Customer;
-import com.company.banking.customer.domain.CustomerDomainException.CustomerNotFoundException;
+import com.company.banking.common.exception.BusinessException;
 import com.company.banking.customer.domain.CustomerRepository;
 import com.company.banking.customer.domain.CustomerStatus;
 import java.time.Instant;
@@ -57,7 +57,7 @@ class CustomerServiceTest {
         when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> customerService.getCustomer(customerId))
-                .isInstanceOf(CustomerNotFoundException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Customer not found");
     }
 
