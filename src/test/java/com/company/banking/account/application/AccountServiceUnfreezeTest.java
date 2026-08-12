@@ -10,6 +10,7 @@ import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountType;
 import com.company.banking.account.domain.AccountUnfrozenEvent;
+import com.company.banking.audit.application.AuditService;
 import com.company.banking.common.money.Money;
 import com.company.banking.customer.domain.CustomerRepository;
 import com.company.banking.security.SecurityContextHelper;
@@ -28,6 +29,8 @@ class AccountServiceUnfreezeTest {
 
     private AccountRepository accountRepository;
     private ApplicationEventPublisher eventPublisher;
+    private AuditService auditService;
+    private SecurityContextHelper securityContextHelper;
     private AccountService accountService;
 
     private UUID accountId;
@@ -37,19 +40,22 @@ class AccountServiceUnfreezeTest {
     void setUp() {
         accountRepository = mock(AccountRepository.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        auditService = mock(AuditService.class);
+        securityContextHelper = mock(SecurityContextHelper.class);
         accountService = new AccountService(
                 accountRepository,
                 mock(CustomerRepository.class),
                 new AccountMapper(),
-                mock(SecurityContextHelper.class),
-                eventPublisher
+                securityContextHelper,
+                eventPublisher,
+                auditService
         );
         accountId = UUID.randomUUID();
         customerId = UUID.randomUUID();
     }
 
     @Test
-    void unfreezeAccountPersistsActiveAndPublishesAuditHookEvent() {
+    void unfreezeAccountRecordsAuditAndPublishesEvent() {
         Instant now = Instant.parse("2026-08-09T12:00:00Z");
         Account frozen = Account.create(
                 accountId,
@@ -61,6 +67,7 @@ class AccountServiceUnfreezeTest {
                 now
         ).freeze(now);
 
+        when(securityContextHelper.getCurrentUsername()).thenReturn("admin");
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(frozen));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -69,6 +76,7 @@ class AccountServiceUnfreezeTest {
         assertThat(response.getStatus()).isEqualTo("ACTIVE");
         assertThat(response.getId()).isEqualTo(accountId);
 
+        verify(auditService).record(any());
         ArgumentCaptor<AccountUnfrozenEvent> captor = ArgumentCaptor.forClass(AccountUnfrozenEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().accountId()).isEqualTo(accountId);
