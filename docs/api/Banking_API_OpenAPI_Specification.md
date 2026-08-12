@@ -8,7 +8,7 @@
 
 ## 0. System Endpoints
 
-### 0.1 Health Check
+### 0.1 Health Check (Legacy)
 
 ```
 GET /health
@@ -16,10 +16,59 @@ GET /health
 
 Public — no authentication required (must stay on the security whitelist when JWT is enabled).
 
+**Deprecated:** Use `/health/live` or `/health/ready` for Kubernetes probes.
+
 Response 200 OK:
 ```json
 {
   "status": "UP"
+}
+```
+
+---
+
+### 0.2 Liveness Probe (Kubernetes)
+
+```
+GET /health/live
+```
+
+Public — Kubernetes liveness probe. Fast check (< 10ms) that the application process is running.  
+Does NOT validate dependencies. Used by K8s to detect dead pods and restart them.
+
+Response 200 OK:
+```json
+{
+  "status": "UP"
+}
+```
+
+---
+
+### 0.3 Readiness Probe (Kubernetes)
+
+```
+GET /health/ready
+```
+
+Public — Kubernetes readiness probe. Validates critical dependencies (PostgreSQL, Redis).  
+Used by K8s to route traffic only to ready pods.
+
+Response 200 OK (ready to serve traffic):
+```json
+{
+  "status": "UP",
+  "database": "UP",
+  "cache": "UP"
+}
+```
+
+Response 503 Service Unavailable (not ready):
+```json
+{
+  "status": "DOWN",
+  "database": "DOWN",
+  "cache": "UP"
 }
 ```
 
