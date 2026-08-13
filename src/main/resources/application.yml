@@ -66,6 +66,12 @@ app:
     global-window-seconds: ${RATE_LIMIT_GLOBAL_WINDOW_SECONDS:60}
     auth-limit: ${RATE_LIMIT_AUTH_LIMIT:20}
     auth-window-seconds: ${RATE_LIMIT_AUTH_WINDOW_SECONDS:60}
+  feature-flags:
+    # local (YAML map, default) | launchdarkly (requires LAUNCHDARKLY_SDK_KEY)
+    provider: ${FEATURE_FLAGS_PROVIDER:local}
+    sdk-key: ${LAUNCHDARKLY_SDK_KEY:}
+    flags:
+      new-account-flow: false
   cors:
     # Origins: set via profile YAML (dev) or CORS_ALLOWED_ORIGINS (comma-separated).
     # Never use "*" when allow-credentials is true.
