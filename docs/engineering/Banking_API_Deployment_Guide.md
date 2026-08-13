@@ -670,6 +670,50 @@ management.metrics.export.prometheus.enabled=true
 
 Access Prometheus metrics: `http://localhost:8080/actuator/prometheus`
 
+### 6.4 Observability — OpenTelemetry & Jaeger
+
+Distributed traces are exported over **OTLP gRPC** to a local Jaeger all-in-one container. The OpenTelemetry Java SDK no longer ships a native Jaeger exporter; Jaeger accepts OTLP on ports `4317` (gRPC) and `4318` (HTTP).
+
+#### Local Jaeger
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d
+# Jaeger UI: http://localhost:16686
+# OTLP gRPC: localhost:4317
+```
+
+Run the API with the `dev` profile (`mvn spring-boot:run -Dspring-boot.run.profiles=dev`). The SDK is created in `ObservabilityConfig` and Spring Boot starter auto-instrumentation covers HTTP and JDBC. You do not add spans in controllers or domain code.
+
+#### Sampling (dev vs prod)
+
+| Environment | Property / env | Default |
+|-------------|----------------|---------|
+| Dev | `app.observability.sampling-rate` / `OTEL_TRACES_SAMPLER_ARG` | `0.1` (10%) |
+| Prod | same, via `application-prod.yml` | `0.05` (5%) |
+
+Sampler is **parent-based + trace-id ratio**: a sampled parent is always followed; otherwise the ratio applies. To debug a single session locally, set `OTEL_TRACES_SAMPLER_ARG=1.0` (or `OTEL_SAMPLER_ARG`) so every request appears in Jaeger.
+
+Disable export without code changes:
+
+```bash
+OTEL_ENABLED=false
+# or
+otel.sdk.disabled=true   # used automatically in unit/IT tests
+```
+
+#### Jaeger UI
+
+1. Open [http://localhost:16686](http://localhost:16686).
+2. **Service** → `banking-api`.
+3. **Find Traces** — recent HTTP operations (e.g. `POST /api/v1/auth/login`).
+4. Open a trace to see the span tree: servlet/HTTP → application work → JDBC.
+
+**Example — debug a transfer:** login, then `POST /api/v1/accounts/{id}/transfer`. In Jaeger, look for the transfer HTTP span and child JDBC spans (debit/credit). A red span indicates an error recorded on that span. Compare timestamps to JSON logs: each log line includes `trace_id` (and `requestId` from `X-Request-Id`) so you can grep Docker/console logs for the same id.
+
+#### Environment
+
+See `.env.example`: `OTEL_EXPORTER_OTLP_ENDPOINT` (alias `OTEL_JAEGER_ENDPOINT`), `OTEL_TRACES_SAMPLER_ARG` (alias `OTEL_SAMPLER_ARG`). No API keys are required for local Jaeger.
+
 ---
 
 ## 7. Backup & Recovery

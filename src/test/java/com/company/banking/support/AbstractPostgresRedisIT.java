@@ -46,5 +46,7 @@ public abstract class AbstractPostgresRedisIT {
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379).toString());
 
         registry.add("app.jwt.secret", () -> "it-test-jwt-secret-key-min-32-chars!!");
+        registry.add("otel.sdk.disabled", () -> "true");
+        registry.add("app.observability.enabled", () -> "false");
     }
 }

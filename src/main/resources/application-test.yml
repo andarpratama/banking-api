@@ -50,7 +50,13 @@ management:
       exposure:
         include: health
 
+otel:
+  sdk:
+    disabled: true
+
 app:
+  observability:
+    enabled: false
   rate-limit:
     enabled: true
     backend: memory
