@@ -35,8 +35,11 @@ app:
     allow-credentials: true
   observability:
     enabled: ${OTEL_ENABLED:true}
+    backend: ${OTEL_BACKEND:jaeger}
     endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:${OTEL_JAEGER_ENDPOINT:http://localhost:4317}}
     sampling-rate: ${OTEL_TRACES_SAMPLER_ARG:${OTEL_SAMPLER_ARG:0.05}}
+    environment: ${OTEL_DEPLOYMENT_ENVIRONMENT:${DD_ENV:prod}}
+    datadog-api-key: ${DD_API_KEY:}
 
 logging:
   level:

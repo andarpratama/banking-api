@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-# Development (deps only - Postgres + Redis; run app locally with mvn)
+# Development (deps: Postgres, Redis, Jaeger, Prometheus, Grafana — run app locally with mvn)
 docker-compose -f docker/docker-compose.dev.yml up -d
 
 # Full stack (API + PostgreSQL + Redis + pgAdmin)
@@ -19,9 +19,10 @@ docker-compose -f docker/docker-compose.prod.yml up -d
 - **Dockerfile.dev** - Development image with live reload
 - **Dockerfile.prod** - Lightweight production image
 - **docker-compose.yml** - Full stack (API + PostgreSQL + Redis + pgAdmin)
-- **docker-compose.dev.yml** - Development setup
+- **docker-compose.dev.yml** - Development deps (Postgres, Redis, pgAdmin, Jaeger, Prometheus, Grafana)
 - **docker-compose.prod.yml** - Production setup
 - **.dockerignore** - Files to exclude from build
+- **observability/** - Prometheus scrape config + Grafana provisioned dashboards
 
 ## Building Images
 
@@ -55,6 +56,9 @@ JWT_SECRET=your-super-secret-jwt-key-min-32-characters
 When running the app locally (e.g., `mvn spring-boot:run -Dspring-boot.run.profiles=dev`), the default values in `application-dev.yml` will match the Docker services:
 - Postgres: `localhost:5432` (or set `SPRING_DATASOURCE_URL` env var)
 - Redis: `localhost:6379` (or set `SPRING_DATA_REDIS_HOST/PORT` env vars)
+- Jaeger UI: http://localhost:16686 (OTLP gRPC `localhost:4317`)
+- Grafana dashboards: http://localhost:3001 (admin/admin) — HTTP latency + error rate
+- Prometheus: http://localhost:9090 (scrapes `host.docker.internal:8080/actuator/prometheus`)
 
 ## Health Checks
 
