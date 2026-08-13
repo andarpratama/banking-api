@@ -59,6 +59,18 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void prometheusScrapeIsExcludedFromRateLimiting() throws ServletException, IOException {
+        properties.setGlobalLimit(1);
+        filter = new RateLimitFilter(new InMemoryRateLimiter(), properties, new ObjectMapper());
+
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletResponse response = exchange("/actuator/prometheus");
+            assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(response.getHeader(RateLimitFilter.HEADER_LIMIT)).isNull();
+        }
+    }
+
+    @Test
     void successfulResponsesIncludeRateLimitHeaders() throws ServletException, IOException {
         MockHttpServletResponse response = exchange("/api/v1/accounts");
 

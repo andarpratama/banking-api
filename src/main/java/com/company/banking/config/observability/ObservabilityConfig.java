@@ -34,9 +34,12 @@ public class ObservabilityConfig {
         }
         OpenTelemetrySdk sdk = OpenTelemetryFactory.create(jaegerProperties);
         log.info(
-                "OpenTelemetry initialized with OTLP exporter (Jaeger): endpoint={} samplingRate={}",
+                "OpenTelemetry initialized with OTLP exporter: backend={} endpoint={} env={} samplingRate={} datadogApiKey={}",
+                jaegerProperties.getBackend(),
                 jaegerProperties.getEndpoint(),
-                jaegerProperties.getSamplingRate()
+                jaegerProperties.getEnvironment(),
+                jaegerProperties.getSamplingRate(),
+                jaegerProperties.hasDatadogApiKey() ? "set" : "absent"
         );
         return sdk;
     }

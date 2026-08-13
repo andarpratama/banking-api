@@ -63,8 +63,8 @@ cd banking-api
 # Optional local env (copy and edit — never commit real secrets)
 cp .env.example .env
 
-# Dependencies
-docker compose -f docker/docker-compose.dev.yml up -d postgres redis
+# Dependencies (Postgres, Redis, Jaeger, Prometheus, Grafana)
+docker compose -f docker/docker-compose.dev.yml up -d
 
 # Run (dev profile: Flyway + seed users)
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
@@ -73,8 +73,12 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 | Check | URL / command |
 |-------|----------------|
 | Health | `curl http://localhost:8080/api/v1/health` |
+| Prometheus scrape | `curl http://localhost:8080/actuator/prometheus` |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| Jaeger UI | http://localhost:16686 |
+| Grafana (latency / error rate) | http://localhost:3001 (admin / admin) |
+| Prometheus | http://localhost:9090 |
 
 API base: **http://localhost:8080/api/v1**
 

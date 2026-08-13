@@ -712,7 +712,58 @@ otel.sdk.disabled=true   # used automatically in unit/IT tests
 
 #### Environment
 
-See `.env.example`: `OTEL_EXPORTER_OTLP_ENDPOINT` (alias `OTEL_JAEGER_ENDPOINT`), `OTEL_TRACES_SAMPLER_ARG` (alias `OTEL_SAMPLER_ARG`). No API keys are required for local Jaeger.
+See `.env.example`: `OTEL_EXPORTER_OTLP_ENDPOINT` (alias `OTEL_JAEGER_ENDPOINT`), `OTEL_TRACES_SAMPLER_ARG` (alias `OTEL_SAMPLER_ARG`), `OTEL_BACKEND`. No API keys are required for local Jaeger.
+
+#### Grafana dashboards (latency + error rate)
+
+Prometheus scrapes `GET /actuator/prometheus` every 10s (JWT and rate limits are skipped for that path). Grafana on **http://localhost:3001** (user `admin` / password `admin`) loads two provisioned dashboards:
+
+| Dashboard | UID | What it shows |
+|-----------|-----|----------------|
+| HTTP Latency | `banking-http-latency` | p50 / p95 / p99 overall, p99 by URI |
+| HTTP Error Rate | `banking-http-error-rate` | 5xx ratio gauge, 2xx/4xx/5xx rate, 5xx by URI |
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d
+# API must be running on the host so Prometheus can scrape host.docker.internal:8080
+curl -sf http://localhost:8080/actuator/prometheus | head
+# Grafana: http://localhost:3001  →  Dashboards → Banking API
+# Prometheus targets: http://localhost:9090/targets
+```
+
+Histogram buckets are enabled for `http.server.requests` so `histogram_quantile` works. Deposit p99 target from Wave 1 is under 200ms — use the latency dashboard while reproducing a transfer.
+
+```
+┌─ HTTP Latency (Grafana :3001) ─────────────────────────────┐
+│  p50 ──╮                                                   │
+│  p95 ──┼── timeseries (seconds)                            │
+│  p99 ──╯                                                   │
+│  p99 by URI (table legend)                                 │
+└────────────────────────────────────────────────────────────┘
+┌─ HTTP Error Rate ──────────────────────────────────────────┐
+│  [gauge 5xx %]   [2xx / 4xx / 5xx request rate]            │
+│  5xx rate by URI                                           │
+└────────────────────────────────────────────────────────────┘
+```
+
+Correlate a slow request: copy `trace_id` from JSON logs → Jaeger Search → compare span duration with the Grafana p99 spike at the same timestamp.
+
+JSON sources (versioned, not click-ops): `docker/observability/grafana/dashboards/`.
+
+#### Datadog (optional OTLP backend)
+
+The app does **not** embed the Datadog Java tracer. Set the same OTLP exporter at a Datadog Agent (or intake):
+
+```bash
+OTEL_BACKEND=datadog
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317   # Datadog Agent OTLP gRPC
+OTEL_DEPLOYMENT_ENVIRONMENT=staging                 # or DD_ENV
+# DD_API_KEY=...   # only for Datadog intake, never for a local Agent; never commit
+```
+
+`deployment.environment` is added as a resource attribute. When `OTEL_BACKEND=datadog` **and** `DD_API_KEY` is set, the exporter sends header `dd-api-key`. Logs only record whether the key is `set` or `absent`.
+
+Prod profile still **does not** expose `/actuator/prometheus` (`management.endpoints.web.exposure.include: health`). Local scrape is for Grafana only.
 
 ---
 
