@@ -93,4 +93,29 @@ public class CustomerJpaEntity {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void applyProfile(String fullName, String phone, String address, Instant updatedAt) {
+        this.fullName = fullName;
+        this.phone = phone;
+        this.address = address;
+        this.updatedAt = updatedAt;
+    }
+
+    public void applyLifecycle(String status, boolean deleted, Instant updatedAt) {
+        this.status = status;
+        this.deleted = deleted;
+        this.updatedAt = updatedAt;
+    }
 }
