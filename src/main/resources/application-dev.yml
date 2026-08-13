@@ -56,7 +56,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_ARG:${OTEL_SAMPLER_ARG:0.1}}
 
 # Local FE defaults (Vite / CRA). Override with CORS_ALLOWED_ORIGINS (comma-separated).
 app:

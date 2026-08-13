@@ -11,10 +11,18 @@
     <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"service":"${APP_NAME}"}</customFields>
-            <!-- Only correlation id from MDC (set by RequestCorrelationFilter). -->
+            <!-- Correlation id (RequestCorrelationFilter) + OTel span context. -->
             <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>trace_id</includeMdcKeyName>
+            <includeMdcKeyName>span_id</includeMdcKeyName>
+            <includeMdcKeyName>trace_flags</includeMdcKeyName>
             <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
         </encoder>
+    </appender>
+
+    <!-- Injects trace_id / span_id into MDC from the current OpenTelemetry context. -->
+    <appender name="OTEL_MDC" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+        <appender-ref ref="JSON_CONSOLE"/>
     </appender>
 
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
@@ -22,14 +30,14 @@
     <!-- Dev: JSON console (readable via jq); levels still overridable via application-dev.yml -->
     <springProfile name="dev">
         <root level="INFO">
-            <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="OTEL_MDC"/>
         </root>
     </springProfile>
 
     <!-- Prod / Production: JSON only for log aggregation -->
     <springProfile name="prod,production">
         <root level="WARN">
-            <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="OTEL_MDC"/>
         </root>
         <logger name="com.company.banking" level="INFO"/>
     </springProfile>

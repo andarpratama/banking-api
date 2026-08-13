@@ -24,9 +24,23 @@
         <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
         <jacoco.version>0.8.13</jacoco.version>
         <launchdarkly.sdk.version>7.15.0</launchdarkly.sdk.version>
+        <!-- Aligns OTel API/SDK with the Spring Boot starter (overrides Boot 3.5 pins). -->
+        <opentelemetry-instrumentation.version>2.30.0</opentelemetry-instrumentation.version>
         <!-- Critical package line coverage gate (T-060); see jacoco-check includes -->
         <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -107,8 +121,21 @@
             <version>${launchdarkly.sdk.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

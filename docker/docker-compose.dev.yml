@@ -58,6 +58,28 @@ services:
     volumes:
       - pgadmin_dev_data:/var/lib/pgadmin
 
+  # Jaeger all-in-one (OTLP collector + UI). App on the host uses localhost:4317.
+  jaeger:
+    image: jaegertracing/all-in-one:1.68.0
+    container_name: banking-jaeger-dev
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "6831:6831/udp"
+      - "4317:4317"
+      - "4318:4318"
+      - "14250:14250"
+      - "16686:16686"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - banking_network
+    restart: unless-stopped
+
 volumes:
   postgres_dev_data:
     driver: local
