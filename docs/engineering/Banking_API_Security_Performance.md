@@ -562,6 +562,48 @@ public List<TransactionResponse> getTransactions(@PathVariable String id) {
     return transactionService.getTransactions(id);  // 1M+ records!
 }
 
+#### Query plan findings (ledger + audit)
+
+Hot paths were reviewed with PostgreSQL `EXPLAIN` against Flyway-applied indexes
+(quick win, 2026-08). Dev profile logs SQL (`show-sql`, `org.hibernate.SQL=DEBUG`,
+bind params at `org.hibernate.orm.jdbc.bind=TRACE`). Production keeps `show-sql: false`.
+
+| Query | Filter / order | Before (V1–V4) | After (V5) |
+|-------|----------------|----------------|------------|
+| Account history / statement | `account_id` + `created_at DESC` + `LIMIT` | `idx_transactions_account_id` then **Sort** | `idx_transactions_account_date` (`account_id, created_at DESC`) — index order, no Sort |
+| Opening balance on statement | `account_id` + `created_at < ?` + `LIMIT 1` | Same Sort risk | Same composite, backward scan |
+| Active customers list / count | `is_deleted = false` | Seq scan or `idx_customers_status` (wrong column) | Partial `idx_customers_not_deleted` |
+| Audit by actor | `LOWER(actor)` + `created_at DESC` | `idx_audit_logs_actor` **not used** (expression mismatch) | Functional `idx_audit_logs_actor_lower_created` |
+
+Representative plan after V5 (mixed accounts, `ANALYZE` then `LIMIT 20`):
+
+```
+Limit
+  ->  Index Scan using idx_transactions_account_date on transactions t
+        Index Cond: (account_id = '...')
+```
+
+`idx_transactions_account_id` remains (leftmost prefix of the composite). Drop it
+only after `pg_stat_user_indexes.idx_scan` shows it unused in the target environment.
+
+```sql
+-- Applied in V5__Query_optimization_indexes.sql
+CREATE INDEX idx_transactions_account_date
+    ON transactions (account_id, created_at DESC);
+
+CREATE INDEX idx_customers_not_deleted
+    ON customers (created_at DESC)
+    WHERE is_deleted = false;
+
+CREATE INDEX idx_audit_logs_actor_lower_created
+    ON audit_logs (LOWER(actor), created_at DESC);
+```
+
+On a single-account table the planner may prefer `idx_transactions_created_at`
+(backward scan + filter). With a realistic mix of accounts it uses the composite
+(`QueryOptimizationIndexIT`).
+
+```java
 // ✓ Correct: Use batch size for inserts
 @Repository
 public class TransactionRepository {
@@ -829,13 +871,13 @@ public class PerformanceMonitoring {
   - [ ] Audit logging enabled for critical operations
 
 - [ ] **Performance**
-  - [ ] Database indexes created
+  - [x] Database indexes created
   - [ ] Connection pooling configured
   - [ ] N+1 queries eliminated
   - [ ] Pagination implemented
   - [ ] Redis caching configured
-  - [ ] Slow queries identified and optimized
-  - [ ] Response compression enabled
+  - [x] Slow queries identified and optimized
+  - [x] Response compression enabled
   - [ ] Load tests passed (1000 req/sec)
   - [ ] P99 response time < 1 second
 
