@@ -1,0 +1,134 @@
+{
+  "consumer": { "name": "web-frontend" },
+  "provider": { "name": "banking-api" },
+  "interactions": [
+    {
+      "description": "register new customer",
+      "providerStates": [
+        { "name": "register email is available" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/register",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "email": "pact-new@example.com",
+          "password": "SecurePass123!",
+          "fullName": "Pact New User",
+          "phone": "+15550001111",
+          "address": "1 Test Street"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "11111111-1111-1111-1111-111111111111",
+          "email": "pact-new@example.com",
+          "fullName": "Pact New User",
+          "customerId": "11111111-1111-1111-1111-111111111111",
+          "createdAt": "2026-08-13T00:00:00Z"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.customerId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.createdAt": { "matchers": [{ "match": "type" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "login customer",
+      "providerStates": [
+        { "name": "customer exists with email pact-user@example.com" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "email": "pact-user@example.com",
+          "password": "SecurePass123!"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "accessToken": "jwt-access-token",
+          "refreshToken": "jwt-refresh-token",
+          "tokenType": "Bearer",
+          "expiresIn": 3600,
+          "user": {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "email": "pact-user@example.com",
+            "roles": ["CUSTOMER"]
+          }
+        },
+        "matchingRules": {
+          "body": {
+            "$.accessToken": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.refreshToken": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.expiresIn": { "matchers": [{ "match": "integer" }], "combine": "AND" },
+            "$.user.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.user.roles": { "matchers": [{ "match": "type", "min": 1 }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "refresh tokens",
+      "providerStates": [
+        { "name": "customer has a valid refresh token" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/refresh",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "refreshToken": "pact-refresh-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "accessToken": "jwt-access-token",
+          "refreshToken": "jwt-refresh-token",
+          "tokenType": "Bearer",
+          "expiresIn": 3600
+        },
+        "matchingRules": {
+          "body": {
+            "$.accessToken": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.refreshToken": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.expiresIn": { "matchers": [{ "match": "integer" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "logout customer",
+      "providerStates": [
+        { "name": "customer is logged in" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/logout",
+        "headers": {
+          "Authorization": "Bearer pact-customer-token"
+        }
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

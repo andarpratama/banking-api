@@ -28,6 +28,7 @@
         <opentelemetry-instrumentation.version>2.30.0</opentelemetry-instrumentation.version>
         <!-- Critical package line coverage gate (T-060); see jacoco-check includes -->
         <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
+        <pact.version>4.7.5</pact.version>
     </properties>
 
     <dependencyManagement>
@@ -166,6 +167,18 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>au.com.dius.pact.provider</groupId>
+            <artifactId>junit5</artifactId>
+            <version>${pact.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>au.com.dius.pact.provider</groupId>
+            <artifactId>junit5spring</artifactId>
+            <version>${pact.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -173,6 +186,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Pact JUnit 5 requires an isolated classpath (provider-junit5 docs). -->
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

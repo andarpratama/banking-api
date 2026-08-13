@@ -44,9 +44,21 @@ public class JpaCustomerRepository implements CustomerRepository {
 
     @Override
     public Customer save(Customer customer) {
-        CustomerJpaEntity entity = toEntity(customer);
-        CustomerJpaEntity saved = springDataRepository.save(entity);
-        return toDomain(saved);
+        CustomerJpaEntity entity = springDataRepository.findById(customer.id())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot persist unknown customer " + customer.id()));
+        entity.applyProfile(
+                customer.fullName(),
+                customer.phone(),
+                customer.address(),
+                customer.updatedAt()
+        );
+        entity.applyLifecycle(
+                customer.status().name(),
+                customer.isDeleted(),
+                customer.updatedAt()
+        );
+        return toDomain(springDataRepository.save(entity));
     }
 
     @Override
@@ -74,20 +86,9 @@ public class JpaCustomerRepository implements CustomerRepository {
                 entity.getFullName(),
                 entity.getPhone(),
                 entity.getAddress(),
-                CustomerStatus.ACTIVE,
+                CustomerStatus.valueOf(entity.getStatus()),
                 entity.getCreatedAt(),
-                entity.getCreatedAt()
-        );
-    }
-
-    private CustomerJpaEntity toEntity(Customer customer) {
-        return new CustomerJpaEntity(
-                customer.userId(),
-                customer.customerNumber(),
-                customer.fullName(),
-                customer.phone(),
-                customer.address(),
-                customer.createdAt()
+                entity.getUpdatedAt()
         );
     }
 }
