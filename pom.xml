@@ -23,6 +23,7 @@
         <testcontainers.version>1.21.4</testcontainers.version>
         <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
         <jacoco.version>0.8.13</jacoco.version>
+        <launchdarkly.sdk.version>7.15.0</launchdarkly.sdk.version>
         <!-- Critical package line coverage gate (T-060); see jacoco-check includes -->
         <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
     </properties>
@@ -99,6 +100,11 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback-encoder.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.launchdarkly</groupId>
+            <artifactId>launchdarkly-java-server-sdk</artifactId>
+            <version>${launchdarkly.sdk.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

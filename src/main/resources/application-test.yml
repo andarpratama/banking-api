@@ -54,6 +54,10 @@ app:
   rate-limit:
     enabled: true
     backend: memory
+  feature-flags:
+    provider: local
+    flags:
+      new-account-flow: false
   cors:
     allowed-origins: http://localhost:3000
     allow-credentials: true
