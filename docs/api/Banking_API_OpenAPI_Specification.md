@@ -141,7 +141,8 @@ Response 401 Unauthorized:
   "timestamp": "2026-08-04T12:00:00Z",
   "status": 401,
   "code": "INVALID_CREDENTIALS",
-  "message": "Invalid email or password"
+  "message": "Invalid email or password",
+  "path": "/api/v1/auth/login"
 }
 ```
 
@@ -854,7 +855,7 @@ Response 200 OK:
 - JWT Bearer token in `Authorization` header
 - Access token expiration: 1 hour
 - Refresh token expiration: 7 days
-- Public (no auth required at filter): `GET /health`, `POST /auth/**`
+- Public (no auth required at filter): `GET /health`, `GET /health/live`, `GET /health/ready`, `POST /auth/**`
 - `POST /auth/logout` still requires a valid Bearer access token (validated in the auth service; token is blacklisted on success)
 - Refresh rotation: previous refresh token hash is revoked when a new pair is issued
 
@@ -882,7 +883,7 @@ Response security headers (v1):
 
 - Global: **100 requests per minute** per authenticated user (fallback: client IP)
 - Auth endpoints (`/api/v1/auth/**`): **20 requests per minute** per client IP (stricter anti-abuse)
-- Excluded: `GET /api/v1/health`, Swagger UI / OpenAPI docs
+- Excluded: `GET /api/v1/health`, `GET /api/v1/health/live`, `GET /api/v1/health/ready`, Swagger UI / OpenAPI docs
 - Backend: Redis (default, multi-instance) or in-memory (`app.rate-limit.backend=memory`)
 - On exceed: HTTP **429** with code `RATE_LIMIT_EXCEEDED`
 - Rate limit headers in response:
@@ -898,5 +899,13 @@ Response security headers (v1):
 API version: v1
 
 Future versions maintained as `/api/v2`, etc.
+
+---
+
+## 12. Schema Validation (CI)
+
+Runtime JSON is checked against the springdoc document `GET /v3/api-docs` in `OpenApiSchemaValidationTest` (T-091). That test also asserts every v1 path in this markdown file is present in the generated spec.
+
+Swagger UI examples for health and auth match the samples in §0–§1. Product contract source of truth remains this file; springdoc annotations must stay aligned when endpoints change.
 
 ---

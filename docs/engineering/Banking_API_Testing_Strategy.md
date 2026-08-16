@@ -636,3 +636,25 @@ open target/surefire-reports/index.html
 - Annually: Architecture fit review
 
 ---
+
+## 14. OpenAPI Schema Validation
+
+### What
+Provider-side checks that live request/response JSON matches the springdoc OpenAPI 3 document (`GET /v3/api-docs`). Complements Pact (consumer contracts): schema tests fail when DTOs or annotations drift from runtime JSON.
+
+### Tool
+Atlassian OpenAPI Request Validator (`openapi-request-validator-core`), driven from MockMvc results.
+
+### Coverage
+- Spec inventory: all v1 paths from `docs/api/Banking_API_OpenAPI_Specification.md` exist in `/v3/api-docs`
+- Interactions: health probes, register, login (200 + 401), get customer, create/get account, deposit
+
+### Running Locally
+```bash
+mvn -Dtest=OpenApiInteractionSupportTest,OpenApiSchemaValidationTest test
+```
+
+### In CI
+GitHub Actions runs these tests as part of `mvn verify`.
+
+---

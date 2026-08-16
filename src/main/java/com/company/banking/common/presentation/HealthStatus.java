@@ -1,6 +1,7 @@
 package com.company.banking.common.presentation;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Readiness probe response with detailed dependency statuses.
@@ -15,5 +16,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @param cache Redis cache connectivity status
  */
 @JsonPropertyOrder({"status", "database", "cache"})
-public record HealthStatus(String status, String database, String cache) {
+@Schema(description = "Readiness probe payload with dependency statuses")
+public record HealthStatus(
+        @Schema(example = "UP", description = "Overall readiness")
+        String status,
+        @Schema(example = "UP", description = "PostgreSQL connectivity")
+        String database,
+        @Schema(example = "UP", description = "Redis connectivity")
+        String cache
+) {
 }

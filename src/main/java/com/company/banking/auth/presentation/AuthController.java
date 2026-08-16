@@ -7,6 +7,7 @@ import com.company.banking.auth.application.TokenResponse;
 import com.company.banking.common.response.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -41,7 +42,21 @@ public class AuthController {
             @ApiResponse(
                     responseCode = "201",
                     description = "Registered",
-                    content = @Content(schema = @Schema(implementation = RegisterResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = RegisterResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Registered customer",
+                                    value = """
+                                            {
+                                              "id": "550e8400-e29b-41d4-a716-446655440000",
+                                              "email": "customer@example.com",
+                                              "fullName": "John Doe",
+                                              "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                                              "createdAt": "2026-08-04T12:00:00Z"
+                                            }
+                                            """
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -67,7 +82,25 @@ public class AuthController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Authenticated",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = LoginResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Authenticated session",
+                                    value = """
+                                            {
+                                              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                              "tokenType": "Bearer",
+                                              "expiresIn": 3600,
+                                              "user": {
+                                                "id": "550e8400-e29b-41d4-a716-446655440000",
+                                                "email": "customer@example.com",
+                                                "roles": ["CUSTOMER"]
+                                              }
+                                            }
+                                            """
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",

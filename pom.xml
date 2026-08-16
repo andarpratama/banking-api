@@ -28,6 +28,7 @@
         <opentelemetry-instrumentation.version>2.30.0</opentelemetry-instrumentation.version>
         <!-- Critical package line coverage gate (T-060); see jacoco-check includes -->
         <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
+        <openapi-request-validator.version>3.0.0</openapi-request-validator.version>
     </properties>
 
     <dependencyManagement>
@@ -132,6 +133,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <!-- Avoid org.json clash with openapi-request-validator-core -->
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>android-json</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -164,6 +172,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.oai</groupId>
+            <artifactId>openapi-request-validator-core</artifactId>
+            <version>${openapi-request-validator.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
