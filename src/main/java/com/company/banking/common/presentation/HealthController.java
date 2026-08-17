@@ -3,6 +3,7 @@ package com.company.banking.common.presentation;
 import com.company.banking.common.application.HealthCheckService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -50,7 +51,11 @@ public class HealthController {
             description = "Application is up",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(implementation = HealthResponse.class)
+                    schema = @Schema(implementation = HealthResponse.class),
+                    examples = @ExampleObject(
+                            name = "Application up",
+                            value = "{\"status\":\"UP\"}"
+                    )
             )
     )
     public HealthResponse health() {
@@ -68,7 +73,11 @@ public class HealthController {
             description = "Application is alive",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(implementation = HealthResponse.class)
+                    schema = @Schema(implementation = HealthResponse.class),
+                    examples = @ExampleObject(
+                            name = "Application up",
+                            value = "{\"status\":\"UP\"}"
+                    )
             )
     )
     public ResponseEntity<HealthResponse> liveness() {
@@ -86,7 +95,11 @@ public class HealthController {
             description = "Application is ready (all dependencies healthy)",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(implementation = HealthStatus.class)
+                    schema = @Schema(implementation = HealthStatus.class),
+                    examples = @ExampleObject(
+                            name = "Ready",
+                            value = "{\"status\":\"UP\",\"database\":\"UP\",\"cache\":\"UP\"}"
+                    )
             )
     )
     @ApiResponse(

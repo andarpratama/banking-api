@@ -54,6 +54,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return true;
         }
         return path.equals("/api/v1/health")
+                || path.startsWith("/api/v1/health/")
                 || path.startsWith("/swagger-ui")
                 || path.equals("/swagger-ui.html")
                 || path.startsWith("/v3/api-docs")

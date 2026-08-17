@@ -1,6 +1,7 @@
 package com.company.banking.transaction.application;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -12,6 +13,8 @@ public class TransactionResponse {
 
     private UUID id;
     private UUID accountId;
+
+    @Schema(nullable = true, description = "Linked ledger row for transfers; absent on deposit/withdraw")
     private UUID referenceId;
     private String transactionType;
     private BigDecimal amount;

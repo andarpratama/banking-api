@@ -56,6 +56,11 @@ class RateLimitFilterTest {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getHeader(RateLimitFilter.HEADER_LIMIT)).isNull();
         }
+        for (String probe : new String[] {"/api/v1/health/live", "/api/v1/health/ready"}) {
+            MockHttpServletResponse response = exchange(probe);
+            assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(response.getHeader(RateLimitFilter.HEADER_LIMIT)).isNull();
+        }
     }
 
     @Test

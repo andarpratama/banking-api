@@ -70,7 +70,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/health").permitAll()
+                        .requestMatchers("/api/v1/health", "/api/v1/health/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus")
