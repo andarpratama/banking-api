@@ -548,6 +548,9 @@ mvn verify -Dskip.unit.tests=true
 # All tests with coverage
 mvn clean verify
 
+# Pact provider verification (T-090)
+mvn -Dtest=PactStatesProviderTest,*PactProviderTest test
+
 # Run specific test class
 mvn test -Dtest=AccountServiceTest
 
@@ -637,7 +640,43 @@ open target/surefire-reports/index.html
 
 ---
 
-## 14. OpenAPI Schema Validation
+## 14. Contract Testing (Consumer-Driven)
+
+### What
+Contract tests verify that the API meets consumer expectations **before** an actual consumer integrates.
+
+### Tool
+Pact (open-source, consumer-driven contract testing framework)
+
+### Approach
+1. Consumer (e.g., frontend) defines expected request/response in JSON contract
+2. Provider (Banking API) verifies it can fulfill each interaction
+3. Contracts live in version control (`src/test/resources/pacts/`); CI validates on each commit
+4. OpenAPI remains the product contract source of truth; Pact files are consumer expectations derived from that API
+
+### Coverage
+- Auth endpoints (register, login, refresh, logout)
+- Customer endpoints (get, update, list, delete)
+- Account endpoints (create, list, get/balance, freeze, unfreeze, close)
+- Transaction endpoints (deposit, withdraw, transfer, history, statement)
+
+### Running Locally
+```bash
+mvn -Dtest=PactStatesProviderTest test
+mvn -Dtest=*PactProviderTest test
+```
+
+### In CI
+GitHub Actions runs Pact verification as part of `mvn verify` (no Pact Broker required; local pact files only).
+
+### Benefits
+- Catches API breaking changes early
+- Decouples frontend/backend development
+- Provider states seed Testcontainers data; JWTs are injected at verification time
+
+---
+
+## 15. OpenAPI Schema Validation
 
 ### What
 Provider-side checks that live request/response JSON matches the springdoc OpenAPI 3 document (`GET /v3/api-docs`). Complements Pact (consumer contracts): schema tests fail when DTOs or annotations drift from runtime JSON.

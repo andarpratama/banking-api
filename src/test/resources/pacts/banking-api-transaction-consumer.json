@@ -1,0 +1,214 @@
+{
+  "consumer": { "name": "web-frontend" },
+  "provider": { "name": "banking-api" },
+  "interactions": [
+    {
+      "description": "deposit funds",
+      "providerStates": [
+        { "name": "customer has an active account" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/transactions/deposit",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer pact-customer-token"
+        },
+        "body": {
+          "accountId": "22222222-2222-2222-2222-222222222222",
+          "amount": 100.00,
+          "description": "Pact deposit"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "44444444-4444-4444-4444-444444444444",
+          "accountId": "22222222-2222-2222-2222-222222222222",
+          "transactionType": "DEPOSIT",
+          "amount": 100.00,
+          "balanceAfter": 1100.00,
+          "description": "Pact deposit"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.accountId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.amount": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.balanceAfter": { "matchers": [{ "match": "number" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "withdraw funds",
+      "providerStates": [
+        { "name": "customer has an active account" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/transactions/withdraw",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer pact-customer-token"
+        },
+        "body": {
+          "accountId": "22222222-2222-2222-2222-222222222222",
+          "amount": 50.00,
+          "description": "Pact withdraw"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "44444444-4444-4444-4444-444444444444",
+          "accountId": "22222222-2222-2222-2222-222222222222",
+          "transactionType": "WITHDRAW",
+          "amount": 50.00,
+          "balanceAfter": 950.00,
+          "description": "Pact withdraw"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.accountId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.amount": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.balanceAfter": { "matchers": [{ "match": "number" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "transfer funds",
+      "providerStates": [
+        { "name": "customer has two active accounts" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/transactions/transfer",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer pact-customer-token"
+        },
+        "body": {
+          "sourceAccountId": "22222222-2222-2222-2222-222222222222",
+          "destinationAccountId": "33333333-3333-3333-3333-333333333333",
+          "amount": 25.00,
+          "description": "Pact transfer"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "referenceId": "55555555-5555-5555-5555-555555555555",
+          "sourceTransaction": {
+            "transactionType": "DEBIT",
+            "amount": 25.00
+          },
+          "destinationTransaction": {
+            "transactionType": "CREDIT",
+            "amount": 25.00
+          }
+        },
+        "matchingRules": {
+          "body": {
+            "$.referenceId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.sourceTransaction.amount": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.destinationTransaction.amount": { "matchers": [{ "match": "number" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "get transaction history",
+      "providerStates": [
+        { "name": "account has deposit history" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/accounts/22222222-2222-2222-2222-222222222222/transactions",
+        "headers": {
+          "Authorization": "Bearer pact-customer-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "content": [
+            {
+              "id": "44444444-4444-4444-4444-444444444444",
+              "transactionType": "DEPOSIT",
+              "amount": 100.00
+            }
+          ],
+          "totalElements": 1,
+          "totalPages": 1,
+          "currentPage": 0,
+          "pageSize": 20
+        },
+        "matchingRules": {
+          "body": {
+            "$.content": { "matchers": [{ "match": "type", "min": 1 }], "combine": "AND" },
+            "$.content[0].id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.content[0].transactionType": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.content[0].amount": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.totalElements": { "matchers": [{ "match": "integer" }], "combine": "AND" },
+            "$.totalPages": { "matchers": [{ "match": "integer" }], "combine": "AND" },
+            "$.currentPage": { "matchers": [{ "match": "integer" }], "combine": "AND" },
+            "$.pageSize": { "matchers": [{ "match": "integer" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "get account statement",
+      "providerStates": [
+        { "name": "account has deposit history" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/accounts/22222222-2222-2222-2222-222222222222/statement",
+        "query": {
+        "fromDate": ["2020-01-01"],
+        "toDate": ["2099-12-31"]
+      },
+        "headers": {
+          "Authorization": "Bearer pact-customer-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "accountId": "22222222-2222-2222-2222-222222222222",
+          "accountNumber": "ACC-0000001",
+          "openingBalance": 1000.00,
+          "closingBalance": 1100.00,
+          "totalDeposits": 100.00,
+          "transactions": [
+            {
+              "id": "44444444-4444-4444-4444-444444444444",
+              "type": "DEPOSIT",
+              "amount": 100.00
+            }
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.accountId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.accountNumber": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.openingBalance": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.closingBalance": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.totalDeposits": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.transactions": { "matchers": [{ "match": "type", "min": 1 }], "combine": "AND" },
+            "$.transactions[0].id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.transactions[0].type": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.transactions[0].amount": { "matchers": [{ "match": "number" }], "combine": "AND" }
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

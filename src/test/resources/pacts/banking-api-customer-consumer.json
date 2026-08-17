@@ -1,0 +1,142 @@
+{
+  "consumer": { "name": "web-frontend" },
+  "provider": { "name": "banking-api" },
+  "interactions": [
+    {
+      "description": "get customer profile",
+      "providerStates": [
+        { "name": "customer is authenticated" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/customers/11111111-1111-1111-1111-111111111111",
+        "headers": {
+          "Authorization": "Bearer pact-customer-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "11111111-1111-1111-1111-111111111111",
+          "userId": "11111111-1111-1111-1111-111111111111",
+          "customerNumber": "CUST-0000001",
+          "fullName": "Pact User",
+          "email": "pact-user@example.com",
+          "phone": "+15550001111",
+          "address": "1 Test Street",
+          "status": "ACTIVE",
+          "createdAt": "2026-08-13T00:00:00Z",
+          "updatedAt": "2026-08-13T00:00:00Z"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.userId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.customerNumber": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.fullName": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.createdAt": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.updatedAt": { "matchers": [{ "match": "type" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "update customer profile",
+      "providerStates": [
+        { "name": "customer is authenticated" }
+      ],
+      "request": {
+        "method": "PUT",
+        "path": "/api/v1/customers/11111111-1111-1111-1111-111111111111",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer pact-customer-token"
+        },
+        "body": {
+          "fullName": "Pact User Updated",
+          "phone": "+15550002222",
+          "address": "2 Pact Avenue"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "11111111-1111-1111-1111-111111111111",
+          "fullName": "Pact User Updated",
+          "email": "pact-user@example.com",
+          "phone": "+15550002222",
+          "address": "2 Pact Avenue",
+          "status": "ACTIVE"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "list customers as admin",
+      "providerStates": [
+        { "name": "admin is authenticated" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/customers",
+        "query": {
+          "page": ["0"],
+          "size": ["20"]
+        },
+        "headers": {
+          "Authorization": "Bearer pact-admin-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "content": [
+            {
+              "id": "11111111-1111-1111-1111-111111111111",
+              "fullName": "Pact Admin",
+              "email": "pact-admin@example.com",
+              "status": "ACTIVE"
+            }
+          ],
+          "totalElements": 1,
+          "totalPages": 1,
+          "currentPage": 0,
+          "pageSize": 20
+        },
+        "matchingRules": {
+          "body": {
+            "$.content": { "matchers": [{ "match": "type", "min": 1 }], "combine": "AND" },
+            "$.content[0].id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.content[0].fullName": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.content[0].email": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.totalElements": { "matchers": [{ "match": "integer" }], "combine": "AND" },
+            "$.totalPages": { "matchers": [{ "match": "integer" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "soft delete customer as admin",
+      "providerStates": [
+        { "name": "admin can delete a customer" }
+      ],
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v1/customers/11111111-1111-1111-1111-111111111111",
+        "headers": {
+          "Authorization": "Bearer pact-admin-token"
+        }
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

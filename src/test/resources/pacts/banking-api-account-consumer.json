@@ -1,0 +1,201 @@
+{
+  "consumer": { "name": "web-frontend" },
+  "provider": { "name": "banking-api" },
+  "interactions": [
+    {
+      "description": "create account",
+      "providerStates": [
+        { "name": "customer is authenticated" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/accounts",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer pact-customer-token"
+        },
+        "body": {
+          "customerId": "11111111-1111-1111-1111-111111111111",
+          "accountType": "SAVINGS",
+          "currency": "USD",
+          "initialBalance": 0.00
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "accountNumber": "ACC-0000001",
+          "customerId": "11111111-1111-1111-1111-111111111111",
+          "accountType": "SAVINGS",
+          "currency": "USD",
+          "balance": 0.00,
+          "status": "ACTIVE",
+          "version": 0
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.accountNumber": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.customerId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.balance": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.version": { "matchers": [{ "match": "integer" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "list customer accounts",
+      "providerStates": [
+        { "name": "customer has an active account" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/customers/11111111-1111-1111-1111-111111111111/accounts",
+        "headers": {
+          "Authorization": "Bearer pact-customer-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "content": [
+            {
+              "id": "22222222-2222-2222-2222-222222222222",
+              "accountNumber": "ACC-0000001",
+              "accountType": "SAVINGS",
+              "currency": "USD",
+              "balance": 1000.00,
+              "status": "ACTIVE"
+            }
+          ],
+          "totalElements": 1
+        },
+        "matchingRules": {
+          "body": {
+            "$.content": { "matchers": [{ "match": "type", "min": 1 }], "combine": "AND" },
+            "$.content[0].id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.content[0].accountNumber": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.content[0].balance": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.totalElements": { "matchers": [{ "match": "integer" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "get account balance",
+      "providerStates": [
+        { "name": "customer has an active account" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/accounts/22222222-2222-2222-2222-222222222222",
+        "headers": {
+          "Authorization": "Bearer pact-customer-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "accountNumber": "ACC-0000001",
+          "customerId": "11111111-1111-1111-1111-111111111111",
+          "accountType": "SAVINGS",
+          "currency": "USD",
+          "balance": 1000.00,
+          "status": "ACTIVE",
+          "version": 0
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.accountNumber": { "matchers": [{ "match": "type" }], "combine": "AND" },
+            "$.customerId": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.balance": { "matchers": [{ "match": "number" }], "combine": "AND" },
+            "$.version": { "matchers": [{ "match": "integer" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "freeze account as admin",
+      "providerStates": [
+        { "name": "admin can freeze a customer account" }
+      ],
+      "request": {
+        "method": "PATCH",
+        "path": "/api/v1/accounts/22222222-2222-2222-2222-222222222222/freeze",
+        "headers": {
+          "Authorization": "Bearer pact-admin-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "accountNumber": "ACC-0000001",
+          "status": "FROZEN"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" },
+            "$.accountNumber": { "matchers": [{ "match": "type" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "unfreeze account as admin",
+      "providerStates": [
+        { "name": "admin can unfreeze a frozen account" }
+      ],
+      "request": {
+        "method": "PATCH",
+        "path": "/api/v1/accounts/22222222-2222-2222-2222-222222222222/unfreeze",
+        "headers": {
+          "Authorization": "Bearer pact-admin-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "status": "ACTIVE"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" }
+          }
+        }
+      }
+    },
+    {
+      "description": "close account as admin",
+      "providerStates": [
+        { "name": "admin can freeze a customer account" }
+      ],
+      "request": {
+        "method": "PATCH",
+        "path": "/api/v1/accounts/22222222-2222-2222-2222-222222222222/close",
+        "headers": {
+          "Authorization": "Bearer pact-admin-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "status": "CLOSED"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "regex", "regex": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" }], "combine": "AND" }
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}
