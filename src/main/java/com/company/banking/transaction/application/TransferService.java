@@ -1,5 +1,6 @@
 package com.company.banking.transaction.application;
 
+import com.company.banking.account.application.AccountCache;
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.common.constants.ErrorCode;
@@ -34,6 +35,7 @@ public class TransferService {
     private final SecurityContextHelper securityContextHelper;
     private final TransferAuditPort transferAuditPort;
     private final NotificationPublisher notificationPublisher;
+    private final AccountCache accountCache;
 
     public TransferService(
             AccountRepository accountRepository,
@@ -41,7 +43,8 @@ public class TransferService {
             TransactionMapper transactionMapper,
             SecurityContextHelper securityContextHelper,
             TransferAuditPort transferAuditPort,
-            NotificationPublisher notificationPublisher
+            NotificationPublisher notificationPublisher,
+            AccountCache accountCache
     ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
@@ -49,6 +52,7 @@ public class TransferService {
         this.securityContextHelper = securityContextHelper;
         this.transferAuditPort = transferAuditPort;
         this.notificationPublisher = notificationPublisher;
+        this.accountCache = accountCache;
     }
 
     @Transactional
@@ -125,6 +129,8 @@ public class TransferService {
                 amount.amount().toPlainString(),
                 now
         ));
+        accountCache.evict(savedSource.id());
+        accountCache.evict(savedDestination.id());
 
         return new TransferResponse(
                 referenceId,

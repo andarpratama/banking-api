@@ -1,5 +1,6 @@
 package com.company.banking.transaction.application;
 
+import com.company.banking.account.application.AccountCache;
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.common.constants.ErrorCode;
@@ -24,19 +25,22 @@ public class WithdrawService {
     private final TransactionMapper transactionMapper;
     private final SecurityContextHelper securityContextHelper;
     private final WithdrawAuditPort withdrawAuditPort;
+    private final AccountCache accountCache;
 
     public WithdrawService(
             AccountRepository accountRepository,
             TransactionRepository transactionRepository,
             TransactionMapper transactionMapper,
             SecurityContextHelper securityContextHelper,
-            WithdrawAuditPort withdrawAuditPort
+            WithdrawAuditPort withdrawAuditPort,
+            AccountCache accountCache
     ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.securityContextHelper = securityContextHelper;
         this.withdrawAuditPort = withdrawAuditPort;
+        this.accountCache = accountCache;
     }
 
     @Transactional
@@ -71,6 +75,7 @@ public class WithdrawService {
         );
         Transaction persisted = transactionRepository.save(ledger);
         withdrawAuditPort.onWithdraw(persisted);
+        accountCache.evict(saved.id());
 
         return transactionMapper.toResponse(persisted);
     }

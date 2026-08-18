@@ -1,5 +1,6 @@
 package com.company.banking.transaction.application;
 
+import com.company.banking.account.application.AccountCache;
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.common.constants.ErrorCode;
@@ -24,19 +25,22 @@ public class DepositService {
     private final TransactionMapper transactionMapper;
     private final SecurityContextHelper securityContextHelper;
     private final DepositAuditPort depositAuditPort;
+    private final AccountCache accountCache;
 
     public DepositService(
             AccountRepository accountRepository,
             TransactionRepository transactionRepository,
             TransactionMapper transactionMapper,
             SecurityContextHelper securityContextHelper,
-            DepositAuditPort depositAuditPort
+            DepositAuditPort depositAuditPort,
+            AccountCache accountCache
     ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.securityContextHelper = securityContextHelper;
         this.depositAuditPort = depositAuditPort;
+        this.accountCache = accountCache;
     }
 
     @Transactional
@@ -71,6 +75,7 @@ public class DepositService {
         );
         Transaction persisted = transactionRepository.save(ledger);
         depositAuditPort.onDeposit(persisted);
+        accountCache.evict(saved.id());
 
         return transactionMapper.toResponse(persisted);
     }

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.company.banking.account.application.AccountCache;
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountStatus;
@@ -32,6 +33,7 @@ class DepositServiceTest {
     private TransactionRepository transactionRepository;
     private SecurityContextHelper securityContextHelper;
     private DepositAuditPort depositAuditPort;
+    private AccountCache accountCache;
     private DepositService depositService;
 
     private UUID customerId;
@@ -43,12 +45,14 @@ class DepositServiceTest {
         transactionRepository = mock(TransactionRepository.class);
         securityContextHelper = mock(SecurityContextHelper.class);
         depositAuditPort = mock(DepositAuditPort.class);
+        accountCache = mock(AccountCache.class);
         depositService = new DepositService(
                 accountRepository,
                 transactionRepository,
                 new TransactionMapper(),
                 securityContextHelper,
-                depositAuditPort
+                depositAuditPort,
+                accountCache
         );
         customerId = UUID.randomUUID();
         accountId = UUID.randomUUID();
@@ -78,6 +82,7 @@ class DepositServiceTest {
         assertThat(response.getDescription()).isEqualTo("Cash deposit at ATM");
         verify(transactionRepository).save(any(Transaction.class));
         verify(depositAuditPort).onDeposit(any(Transaction.class));
+        verify(accountCache).evict(accountId);
     }
 
     @Test
@@ -93,6 +98,7 @@ class DepositServiceTest {
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
                         .isEqualTo(ErrorCode.INVALID_AMOUNT));
         verify(transactionRepository, never()).save(any());
+        verify(accountCache, never()).evict(any());
     }
 
     @Test
@@ -109,6 +115,7 @@ class DepositServiceTest {
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
                         .isEqualTo(ErrorCode.ACCOUNT_FROZEN));
         verify(transactionRepository, never()).save(any());
+        verify(accountCache, never()).evict(any());
     }
 
     @Test
@@ -125,6 +132,7 @@ class DepositServiceTest {
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
                         .isEqualTo(ErrorCode.ACCOUNT_CLOSED));
         verify(transactionRepository, never()).save(any());
+        verify(accountCache, never()).evict(any());
     }
 
     @Test
@@ -143,6 +151,7 @@ class DepositServiceTest {
                         .isEqualTo(ErrorCode.FORBIDDEN));
         verify(accountRepository, never()).save(any());
         verify(transactionRepository, never()).save(any());
+        verify(accountCache, never()).evict(any());
     }
 
     @Test

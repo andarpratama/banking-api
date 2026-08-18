@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.company.banking.account.application.AccountCache;
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountStatus;
@@ -32,6 +33,7 @@ class WithdrawServiceTest {
     private TransactionRepository transactionRepository;
     private SecurityContextHelper securityContextHelper;
     private WithdrawAuditPort withdrawAuditPort;
+    private AccountCache accountCache;
     private WithdrawService withdrawService;
 
     private UUID customerId;
@@ -43,12 +45,14 @@ class WithdrawServiceTest {
         transactionRepository = mock(TransactionRepository.class);
         securityContextHelper = mock(SecurityContextHelper.class);
         withdrawAuditPort = mock(WithdrawAuditPort.class);
+        accountCache = mock(AccountCache.class);
         withdrawService = new WithdrawService(
                 accountRepository,
                 transactionRepository,
                 new TransactionMapper(),
                 securityContextHelper,
-                withdrawAuditPort
+                withdrawAuditPort,
+                accountCache
         );
         customerId = UUID.randomUUID();
         accountId = UUID.randomUUID();
@@ -78,6 +82,7 @@ class WithdrawServiceTest {
         assertThat(response.getDescription()).isEqualTo("ATM withdrawal");
         verify(transactionRepository).save(any(Transaction.class));
         verify(withdrawAuditPort).onWithdraw(any(Transaction.class));
+        verify(accountCache).evict(accountId);
     }
 
     @Test
@@ -94,6 +99,7 @@ class WithdrawServiceTest {
 
         assertThat(response.getBalanceAfter()).isEqualByComparingTo("0.00");
         assertThat(response.getAmount()).isEqualByComparingTo("100.00");
+        verify(accountCache).evict(accountId);
     }
 
     @Test
