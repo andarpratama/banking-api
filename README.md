@@ -66,6 +66,9 @@ cp .env.example .env
 # Dependencies (Postgres, Redis, Jaeger, Prometheus, Grafana)
 docker compose -f docker/docker-compose.dev.yml up -d
 
+# Optional ELK log aggregation (Kibana http://localhost:5601)
+docker compose -f docker/docker-compose.dev.yml --profile elk up -d
+
 # Run (dev profile: Flyway + seed users)
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
@@ -79,6 +82,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 | Jaeger UI | http://localhost:16686 |
 | Grafana (latency / error rate) | http://localhost:3001 (admin / admin) |
 | Prometheus | http://localhost:9090 |
+| Kibana (ELK profile) | http://localhost:5601 |
 
 API base: **http://localhost:8080/api/v1**
 

@@ -558,6 +558,8 @@ http GET localhost:8080/api/v1/customers \
 
 Profiles `dev` and `prod` use **JSON console logs** via `logback-spring.xml` + logstash-logback-encoder. Each request gets an `X-Request-Id` (generated if the client omits it); the same value is put in MDC as `requestId` and echoed on the response.
 
+Optional **ELK** aggregation (compose profile `elk`) ships the same JSON over UDP to Logstash. Packets are dropped if Logstash is not running (`AsyncAppender neverBlock`). Needs about **2.5GB extra RAM**.
+
 ```bash
 # Start with profile=dev, then:
 curl -si http://localhost:8080/api/v1/health | grep -i x-request-id
@@ -565,6 +567,12 @@ curl -si http://localhost:8080/api/v1/health | grep -i x-request-id
 # Console log line (pretty-printed) includes requestId + HTTP access line:
 # {"@timestamp":"...","message":"HTTP GET /api/v1/health status=200 durationMs=3",
 #  "logger_name":"...RequestCorrelationFilter","requestId":"<uuid>","service":"banking-api",...}
+
+# Optional Kibana (extra ~2.5GB RAM). Create data view `banking-api-*` with @timestamp.
+docker compose -f docker/docker-compose.dev.yml --profile elk up -d
+# Kibana: http://localhost:5601
+# Elasticsearch: http://localhost:9200
+# Logstash UDP ingest: localhost:5000
 ```
 
 **Do not log** passwords, JWT/refresh tokens, `Authorization` headers, cookies, or full request bodies. Access logs use method + URI path + status only (no query string).

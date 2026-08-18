@@ -6,6 +6,9 @@
 # Development (deps: Postgres, Redis, Jaeger, Prometheus, Grafana — run app locally with mvn)
 docker-compose -f docker/docker-compose.dev.yml up -d
 
+# Optional ELK (Elasticsearch + Logstash + Kibana). Extra ~2.5GB RAM.
+docker-compose -f docker/docker-compose.dev.yml --profile elk up -d
+
 # Full stack (API + PostgreSQL + Redis + pgAdmin)
 docker-compose -f docker/docker-compose.yml up -d
 
@@ -19,10 +22,10 @@ docker-compose -f docker/docker-compose.prod.yml up -d
 - **Dockerfile.dev** - Development image with live reload
 - **Dockerfile.prod** - Lightweight production image
 - **docker-compose.yml** - Full stack (API + PostgreSQL + Redis + pgAdmin)
-- **docker-compose.dev.yml** - Development deps (Postgres, Redis, pgAdmin, Jaeger, Prometheus, Grafana)
+- **docker-compose.dev.yml** - Development deps (Postgres, Redis, pgAdmin, Jaeger, Prometheus, Grafana; optional ELK via `--profile elk`)
 - **docker-compose.prod.yml** - Production setup
 - **.dockerignore** - Files to exclude from build
-- **observability/** - Prometheus scrape config + Grafana provisioned dashboards
+- **observability/** - Prometheus scrape config, Grafana dashboards, Logstash pipeline
 
 ## Building Images
 
@@ -59,6 +62,7 @@ When running the app locally (e.g., `mvn spring-boot:run -Dspring-boot.run.profi
 - Jaeger UI: http://localhost:16686 (OTLP gRPC `localhost:4317`)
 - Grafana dashboards: http://localhost:3001 (admin/admin) — HTTP latency + error rate
 - Prometheus: http://localhost:9090 (scrapes `host.docker.internal:8080/actuator/prometheus`)
+- Kibana (optional `--profile elk`): http://localhost:5601 — data view `banking-api-*`
 
 ## Health Checks
 
@@ -69,6 +73,10 @@ docker-compose -f docker/docker-compose.dev.yml exec postgres psql -U banking_us
 
 # Redis
 docker-compose -f docker/docker-compose.dev.yml exec redis redis-cli ping
+
+# ELK (only after --profile elk)
+curl -sf http://localhost:9200/_cluster/health
+curl -sf http://localhost:5601/api/status
 ```
 
 ### Using docker-compose.yml (full stack)
