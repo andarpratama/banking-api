@@ -2,11 +2,14 @@
 <!--
   Structured JSON logging for dev/prod (logstash-logback-encoder).
   MDC key requestId is set by RequestCorrelationFilter (X-Request-Id).
+  Optional UDP ship to local Logstash (compose profile elk); drops if ELK is down.
   Test/default profiles keep plain console for readable Surefire output.
 -->
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <springProperty name="APP_NAME" source="spring.application.name" defaultValue="banking-api"/>
+    <springProperty name="LOGSTASH_HOST" source="app.logging.logstash.host" defaultValue="localhost"/>
+    <springProperty name="LOGSTASH_PORT" source="app.logging.logstash.port" defaultValue="5000"/>
 
     <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
@@ -27,17 +30,42 @@
 
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
+    <!-- UDP ship only when running the API (not Surefire). Packets drop if ELK is down. -->
+    <springProfile name="dev | prod | production">
+        <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashUdpSocketAppender">
+            <host>${LOGSTASH_HOST}</host>
+            <port>${LOGSTASH_PORT}</port>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service":"${APP_NAME}"}</customFields>
+                <includeMdcKeyName>requestId</includeMdcKeyName>
+                <includeMdcKeyName>trace_id</includeMdcKeyName>
+                <includeMdcKeyName>span_id</includeMdcKeyName>
+                <includeMdcKeyName>trace_flags</includeMdcKeyName>
+                <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
+            </encoder>
+        </appender>
+
+        <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+            <neverBlock>true</neverBlock>
+            <queueSize>256</queueSize>
+            <includeCallerData>false</includeCallerData>
+            <appender-ref ref="LOGSTASH"/>
+        </appender>
+    </springProfile>
+
     <!-- Dev: JSON console (readable via jq); levels still overridable via application-dev.yml -->
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="OTEL_MDC"/>
+            <appender-ref ref="ASYNC_LOGSTASH"/>
         </root>
     </springProfile>
 
-    <!-- Prod / Production: JSON only for log aggregation -->
+    <!-- Prod / Production: JSON console + optional UDP ship for log aggregation -->
     <springProfile name="prod,production">
         <root level="WARN">
             <appender-ref ref="OTEL_MDC"/>
+            <appender-ref ref="ASYNC_LOGSTASH"/>
         </root>
         <logger name="com.company.banking" level="INFO"/>
     </springProfile>

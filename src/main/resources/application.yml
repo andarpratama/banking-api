@@ -108,6 +108,11 @@ app:
     sdk-key: ${LAUNCHDARKLY_SDK_KEY:}
     flags:
       new-account-flow: false
+  logging:
+    logstash:
+      # UDP JSON to local Logstash (compose profile elk). Packets drop if ELK is not running.
+      host: ${LOGSTASH_HOST:localhost}
+      port: ${LOGSTASH_PORT:5000}
   observability:
     # OTLP gRPC to Jaeger all-in-one or Datadog Agent (native Jaeger exporter removed from OTel Java).
     enabled: ${OTEL_ENABLED:true}

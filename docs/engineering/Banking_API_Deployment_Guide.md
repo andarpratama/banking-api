@@ -765,6 +765,27 @@ OTEL_DEPLOYMENT_ENVIRONMENT=staging                 # or DD_ENV
 
 Prod profile still **does not** expose `/actuator/prometheus` (`management.endpoints.web.exposure.include: health`). Local scrape is for Grafana only.
 
+### 6.5 Centralized logging — ELK (dev)
+
+Local log aggregation is **opt-in** so default `docker compose up` stays light. Elasticsearch 8.15 + Logstash + Kibana sit behind compose profile `elk`. The API already writes JSON (T-053); with profile `dev` or `prod` it also ships those events over **UDP 5000** to Logstash (`LogstashUdpSocketAppender` + `AsyncAppender neverBlock`). If ELK is down, packets are dropped and the API is unaffected.
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --profile elk up -d
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+curl -sf http://localhost:8080/api/v1/health
+# Kibana: http://localhost:5601
+# Elasticsearch: http://localhost:9200/_cluster/health
+```
+
+1. Open [http://localhost:5601](http://localhost:5601).
+2. **Stack Management → Data Views → Create data view**.
+3. Index pattern: `banking-api-*`. Timestamp field: `@timestamp`.
+4. **Discover** — filter by `requestId` or `trace_id` (same values as Jaeger / `X-Request-Id`).
+
+Host/port overrides: `LOGSTASH_HOST` / `LOGSTASH_PORT` (see `.env.example`). Pipeline: `docker/observability/logstash/pipeline/logstash.conf`.
+
+If Elasticsearch fails to start on Linux/WSL, raise `vm.max_map_count` (Elastic requires 262144): `sudo sysctl -w vm.max_map_count=262144`.
+
 ---
 
 ## 7. Backup & Recovery
