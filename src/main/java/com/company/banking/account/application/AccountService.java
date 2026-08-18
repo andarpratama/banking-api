@@ -10,6 +10,7 @@ import com.company.banking.audit.domain.AuditActions;
 import com.company.banking.common.constants.ErrorCode;
 import com.company.banking.common.exception.BusinessException;
 import com.company.banking.common.money.Money;
+import com.company.banking.config.CacheNames;
 import com.company.banking.customer.domain.CustomerRepository;
 import com.company.banking.security.SecurityContextHelper;
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ public class AccountService {
     private final SecurityContextHelper securityContextHelper;
     private final ApplicationEventPublisher eventPublisher;
     private final AuditService auditService;
+    private final AccountCache accountCache;
 
     public AccountService(
             AccountRepository accountRepository,
@@ -40,7 +43,8 @@ public class AccountService {
             AccountMapper accountMapper,
             SecurityContextHelper securityContextHelper,
             ApplicationEventPublisher eventPublisher,
-            AuditService auditService
+            AuditService auditService,
+            AccountCache accountCache
     ) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
@@ -48,6 +52,7 @@ public class AccountService {
         this.securityContextHelper = securityContextHelper;
         this.eventPublisher = eventPublisher;
         this.auditService = auditService;
+        this.accountCache = accountCache;
     }
 
     @Transactional
@@ -88,6 +93,7 @@ public class AccountService {
         return accountMapper.toResponse(saved);
     }
 
+    @Cacheable(cacheNames = CacheNames.ACCOUNTS, key = "#accountId")
     @Transactional(readOnly = true)
     public AccountResponse getAccount(UUID accountId) {
         Account account = requireAccount(accountId);
@@ -114,6 +120,7 @@ public class AccountService {
         Account account = requireAccount(accountId);
         Account frozen = account.freeze(Instant.now());
         Account saved = accountRepository.save(frozen);
+        accountCache.evict(saved.id());
         recordAccountAudit(
                 AuditActions.FREEZE_ACCOUNT,
                 "/accounts/" + accountId + "/freeze",
@@ -130,6 +137,7 @@ public class AccountService {
         Instant now = Instant.now();
         Account unfrozen = account.unfreeze(now);
         Account saved = accountRepository.save(unfrozen);
+        accountCache.evict(saved.id());
         recordAccountAudit(
                 AuditActions.UNFREEZE_ACCOUNT,
                 "/accounts/" + accountId + "/unfreeze",
@@ -148,6 +156,7 @@ public class AccountService {
         Account account = requireAccount(accountId);
         Account closed = account.close(Instant.now());
         Account saved = accountRepository.save(closed);
+        accountCache.evict(saved.id());
         recordAccountAudit(
                 AuditActions.CLOSE_ACCOUNT,
                 "/accounts/" + accountId + "/close",

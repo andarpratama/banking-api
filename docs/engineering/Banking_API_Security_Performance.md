@@ -658,6 +658,11 @@ Page<Account> findAll(Pageable pageable);
 
 ### 2.3 Caching Strategy
 
+**Implemented:** Spring Cache + Redis (`customers`, `accounts` regions, 10-minute TTL, JSON values).
+`GET` by id is `@Cacheable`. Customer `PUT` uses `@CachePut`; customer delete uses `@CacheEvict`.
+Account freeze/unfreeze/close and deposit/withdraw/transfer evict `accounts` **after commit** so
+balances and status are never served stale. The `test` profile uses an in-memory cache (`spring.cache.type=simple`).
+
 #### Redis Caching
 
 ```java

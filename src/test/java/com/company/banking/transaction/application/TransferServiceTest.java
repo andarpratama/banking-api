@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.company.banking.account.application.AccountCache;
 import com.company.banking.account.domain.Account;
 import com.company.banking.account.domain.AccountRepository;
 import com.company.banking.account.domain.AccountStatus;
@@ -38,6 +39,7 @@ class TransferServiceTest {
     private SecurityContextHelper securityContextHelper;
     private TransferAuditPort transferAuditPort;
     private NotificationPublisher notificationPublisher;
+    private AccountCache accountCache;
     private TransferService transferService;
 
     private UUID ownerId;
@@ -52,13 +54,15 @@ class TransferServiceTest {
         securityContextHelper = mock(SecurityContextHelper.class);
         transferAuditPort = mock(TransferAuditPort.class);
         notificationPublisher = mock(NotificationPublisher.class);
+        accountCache = mock(AccountCache.class);
         transferService = new TransferService(
                 accountRepository,
                 transactionRepository,
                 new TransactionMapper(),
                 securityContextHelper,
                 transferAuditPort,
-                notificationPublisher
+                notificationPublisher,
+                accountCache
         );
         ownerId = UUID.randomUUID();
         otherCustomerId = UUID.randomUUID();
@@ -113,6 +117,8 @@ class TransferServiceTest {
         assertThat(notice.type()).isEqualTo(NotificationType.TRANSFER_COMPLETED);
         assertThat(notice.body()).contains(response.getReferenceId().toString());
         assertThat(notice.body()).contains("250.00");
+        verify(accountCache).evict(sourceId);
+        verify(accountCache).evict(destinationId);
     }
 
     @Test
@@ -133,6 +139,7 @@ class TransferServiceTest {
                 });
         verify(accountRepository, never()).findById(any());
         verify(transactionRepository, never()).save(any());
+        verify(accountCache, never()).evict(any());
     }
 
     @Test

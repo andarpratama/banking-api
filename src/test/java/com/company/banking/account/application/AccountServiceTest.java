@@ -39,6 +39,7 @@ class AccountServiceTest {
     private SecurityContextHelper securityContextHelper;
     private ApplicationEventPublisher eventPublisher;
     private AuditService auditService;
+    private AccountCache accountCache;
     private AccountService accountService;
 
     private UUID customerId;
@@ -52,13 +53,15 @@ class AccountServiceTest {
         securityContextHelper = mock(SecurityContextHelper.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
         auditService = mock(AuditService.class);
+        accountCache = mock(AccountCache.class);
         accountService = new AccountService(
                 accountRepository,
                 customerRepository,
                 accountMapper,
                 securityContextHelper,
                 eventPublisher,
-                auditService
+                auditService,
+                accountCache
         );
         customerId = UUID.randomUUID();
         accountId = UUID.randomUUID();
@@ -116,6 +119,7 @@ class AccountServiceTest {
 
         assertThat(response.getStatus()).isEqualTo("FROZEN");
         assertThat(response.getAccountNumber()).isEqualTo(active.accountNumber());
+        verify(accountCache).evict(accountId);
     }
 
     @Test
@@ -137,6 +141,19 @@ class AccountServiceTest {
         assertThat(event.accountId()).isEqualTo(accountId);
         assertThat(event.accountNumber()).isEqualTo(frozen.accountNumber());
         assertThat(event.occurredAt()).isNotNull();
+        verify(accountCache).evict(accountId);
+    }
+
+    @Test
+    void closeAccountUpdatesStatusAndEvictsCache() {
+        Account active = sampleAccount(AccountStatus.ACTIVE);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(active));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AccountStatusResponse response = accountService.closeAccount(accountId);
+
+        assertThat(response.getStatus()).isEqualTo("CLOSED");
+        verify(accountCache).evict(accountId);
     }
 
     @Test

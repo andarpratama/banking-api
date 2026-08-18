@@ -48,7 +48,8 @@ class AccountServiceUnfreezeTest {
                 new AccountMapper(),
                 securityContextHelper,
                 eventPublisher,
-                auditService
+                auditService,
+                mock(AccountCache.class)
         );
         accountId = UUID.randomUUID();
         customerId = UUID.randomUUID();

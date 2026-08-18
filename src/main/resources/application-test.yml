@@ -38,6 +38,9 @@ spring:
     redis:
       timeout: 2s
 
+  cache:
+    type: simple
+
 logging:
   level:
     root: WARN
