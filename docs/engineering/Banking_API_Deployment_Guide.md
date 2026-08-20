@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0  
 **Date:** 2026-08-04  
-**Target Environments:** Local Development, Docker, Production
+**Target Environments:** Local Development, Docker, Kubernetes (dev / staging / prod)
 
 ---
 
@@ -19,6 +19,7 @@
 | PostgreSQL | 17 | Database (local only) |
 | Redis | 7+ | Cache (local only) |
 | Git | 2.40+ | Version control |
+| kubectl | 1.24+ | Kubernetes CLI (Kustomize built-in) |
 
 ### 1.2 Installation
 
@@ -613,17 +614,83 @@ services:
 
 ### 5.3 Kubernetes Deployment
 
-See `k8s/` directory for:
-- `deployment.yaml` - API deployment
-- `service.yaml` - Service exposure
-- `configmap.yaml` - Configuration
-- `secret.yaml` - Secrets management
-- `ingress.yaml` - Ingress controller
+Manifests are Kustomize overlays under [`k8s/`](../../k8s/). **Use `kubectl apply -k`** (or `kubectl apply -k k8s/` for the default dev overlay). Do not recursively `kubectl apply -f k8s/` — overlay patches and SealedSecret placeholders are not standalone resources.
+
+| Overlay | Namespace | API replicas | Notes |
+|---------|-----------|--------------|--------|
+| `k8s/overlays/dev` | `banking` | 1 | `SPRING_PROFILES_ACTIVE=dev`, ClusterIP + port-forward |
+| `k8s/overlays/staging` | `banking-staging` | 2 | Ingress `api.staging.banking.local` |
+| `k8s/overlays/prod` | `banking-prod` | 3–10 | Ingress + TLS + HPA |
+
+#### Prerequisites
+
+- Kubernetes 1.24+ with a **default StorageClass** (Kind, Minikube, Docker Desktop)
+- Image `banking-api:<tag>` loaded into the cluster
+- Optional: metrics-server (prod HPA), ingress-nginx (staging/prod Ingress)
 
 ```bash
-kubectl apply -f k8s/
-kubectl rollout status deployment/banking-api
+docker build -f docker/Dockerfile -t banking-api:latest .
+# Kind: kind load docker-image banking-api:latest
+# Minikube: minikube image load banking-api:latest
 ```
+
+#### Deploy to development
+
+```bash
+kubectl apply -k k8s/overlays/dev
+kubectl get pods -n banking
+kubectl get svc -n banking
+kubectl rollout status deployment/banking-api -n banking
+
+kubectl port-forward svc/banking-api 8080:8080 -n banking
+curl -sf http://localhost:8080/api/v1/health
+curl -sf http://localhost:8080/api/v1/health/live
+curl -sf http://localhost:8080/api/v1/health/ready
+
+kubectl logs -n banking -l app=banking-api --tail=100
+```
+
+Flyway runs when the API pod starts (Postgres DNS: `postgres-service`). Redis: `redis-service:6379`.
+
+#### Deploy to staging / production
+
+```bash
+kubectl apply -k k8s/overlays/staging
+kubectl apply -k k8s/overlays/prod
+
+kubectl get pods -n banking-prod
+kubectl get hpa -n banking-prod
+kubectl rollout status deployment/banking-api -n banking-prod
+```
+
+#### Secrets
+
+`k8s/base/secret.env` is **placeholder-only** so `kustomize build` works locally. Replace before any shared cluster. Production: [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) — see `k8s/base/secret-sealed.yaml`. Do not commit real passwords or JWT keys.
+
+#### Probes, PDB, HPA
+
+- Liveness: `GET /api/v1/health/live` (process up)
+- Readiness: `GET /api/v1/health/ready` (PostgreSQL + Redis)
+- Rolling update: `maxUnavailable: 0`; PDB `maxUnavailable: 1`
+- Prod HPA: CPU 70% / memory 80%, min 3 / max 10 replicas (requires metrics-server)
+
+#### Monitoring & debugging
+
+```bash
+kubectl logs -f deployment/banking-api -n banking
+kubectl describe deployment banking-api -n banking
+kubectl top pods -n banking
+```
+
+#### Upgrading / rollback
+
+```bash
+kubectl set image deployment/banking-api banking-api=banking-api:v1.1.0 -n banking
+kubectl rollout status deployment/banking-api -n banking
+kubectl rollout undo deployment/banking-api -n banking
+```
+
+More detail: [`k8s/README.md`](../../k8s/README.md).
 
 ---
 
@@ -942,6 +1009,9 @@ mvn clean build && mvn spring-boot:run
 
 # Docker Compose (all services)
 docker-compose up -d
+
+# Kubernetes (dev overlay)
+kubectl apply -k k8s/overlays/dev
 
 # Run tests
 mvn clean verify

@@ -21,7 +21,7 @@ It demonstrates production-oriented backend practices — JWT auth & RBAC, Postg
 | Cache / token store | Redis |
 | Auth | JWT access + refresh rotation, BCrypt, ADMIN / CUSTOMER RBAC |
 | Test | JUnit 5, Mockito, AssertJ, Testcontainers |
-| Ops | Docker Compose (`docker/`) |
+| Ops | Docker Compose (`docker/`), Kubernetes manifests (`k8s/`) |
 
 ## Current status (honest)
 
@@ -103,7 +103,34 @@ curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -d '{"email":"admin@banking.local","password":"SecurePass123!"}'
 ```
 
-More detail: [Development Setup](docs/engineering/Banking_API_Development_Setup.md) · [Docker](docker/).
+More detail: [Development Setup](docs/engineering/Banking_API_Development_Setup.md) · [Docker](docker/) · [Kubernetes](k8s/README.md).
+
+## Deploy to Kubernetes
+
+Kustomize overlays live in [`k8s/`](k8s/). Use **`kubectl apply -k`** (not a recursive `apply -f`); overlay patches are not standalone objects.
+
+```bash
+# Validate (client-side, no cluster required)
+kubectl apply -k k8s/overlays/dev --dry-run=client
+
+# Build the API image, then load it into Kind / Minikube
+docker build -f docker/Dockerfile -t banking-api:latest .
+
+# Deploy the development overlay (namespace: banking)
+kubectl apply -k k8s/overlays/dev
+kubectl rollout status deployment/banking-api -n banking
+
+kubectl port-forward svc/banking-api 8080:8080 -n banking
+curl -sf http://localhost:8080/api/v1/health
+```
+
+| Environment | Command | Namespace |
+|-------------|---------|-----------|
+| Development | `kubectl apply -k k8s/overlays/dev` | `banking` |
+| Staging | `kubectl apply -k k8s/overlays/staging` | `banking-staging` |
+| Production | `kubectl apply -k k8s/overlays/prod` | `banking-prod` |
+
+Full steps (probes, secrets, HPA, rollback): [k8s/README.md](k8s/README.md) · [Deployment Guide](docs/engineering/Banking_API_Deployment_Guide.md#53-kubernetes-deployment).
 
 ## CI
 
@@ -130,6 +157,7 @@ src/main/resources/
   application*.yml
   db/migration/                      # Flyway
 docker/                              # Compose + Dockerfiles
+k8s/                                 # Kustomize manifests (dev / staging / prod)
 docs/                                # Product & engineering specs
 ```
 

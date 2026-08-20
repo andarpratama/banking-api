@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: banking-prod
+
+resources:
+  - ../../base
+  - hpa.yaml
+  - ingress.yaml
+
+replicas:
+  - name: banking-api
+    count: 3
+  - name: postgres
+    count: 1
+  - name: redis
+    count: 1
+
+images:
+  - name: banking-api
+    newTag: v1.0.0
+
+patches:
+  - path: app-patch.yaml
+    target:
+      kind: Deployment
+      name: banking-api
+  - path: limits.yaml
+    target:
+      kind: Deployment
+      name: banking-api
+  - target:
+      kind: Namespace
+      name: banking
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: banking-prod
+
+labels:
+  - pairs:
+      environment: prod

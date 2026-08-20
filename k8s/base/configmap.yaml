@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: banking-api-config
+  namespace: banking
+  labels:
+    app: banking-api
+data:
+  # Non-secret Spring Boot settings (env vars override application*.yml).
+  # Service DNS — do not hardcode pod IPs.
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-service:5432/banking_api
+  SPRING_DATASOURCE_USERNAME: banking_user
+  SPRING_DATA_REDIS_HOST: redis-service
+  SPRING_DATA_REDIS_PORT: "6379"
+  SERVER_PORT: "8080"
+  JWT_EXPIRATION: "3600"
+  JWT_REFRESH_EXPIRATION: "604800"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus,metrics
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError"

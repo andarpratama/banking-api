@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: banking
+
+resources:
+  - ../../base
+
+replicas:
+  - name: banking-api
+    count: 1
+  - name: postgres
+    count: 1
+  - name: redis
+    count: 1
+
+images:
+  - name: banking-api
+    newTag: latest
+
+patches:
+  - path: app-patch.yaml
+    target:
+      kind: Deployment
+      name: banking-api
+  - path: limits.yaml
+    target:
+      kind: Deployment
+      name: banking-api
+  - path: postgres-patch.yaml
+    target:
+      kind: StatefulSet
+      name: postgres
+
+labels:
+  - pairs:
+      environment: dev
