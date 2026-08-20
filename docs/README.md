@@ -348,6 +348,7 @@ Deployment Guide (Go Live)
 | **How do I deploy?** | [Deployment Guide](./engineering/Banking_API_Deployment_Guide.md) | Deployment steps |
 | **What are the SLOs?** | [SLO definition](./engineering/Banking_API_SLO.md) | Availability, p99, error rate |
 | **How is error budget tracked?** | [Error budget](./engineering/Banking_API_Error_Budget.md) | Remaining budget, MWMB burn-rate alerts |
+| **How does Postgres replicate?** | [Postgres replication](./engineering/Banking_API_Postgres_Replication.md) | Local async primary + hot standby |
 | **What's the database schema?** | [DDD](./database/Banking_API_Database_Design_Document.md) | Database design |
 
 ---

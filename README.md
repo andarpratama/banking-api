@@ -69,6 +69,9 @@ docker compose -f docker/docker-compose.dev.yml up -d
 # Optional ELK log aggregation (Kibana http://localhost:5601)
 docker compose -f docker/docker-compose.dev.yml --profile elk up -d
 
+# Optional Postgres hot standby (localhost:5433). App still uses :5432.
+docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.replication.yml --profile replication up -d
+
 # Run (dev profile: Flyway + seed users)
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
@@ -85,6 +88,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 | Alertmanager (error-budget alerts, local) | http://localhost:9093 |
 | Kibana (ELK profile) | http://localhost:5601 |
 | Chaos experiments (local) | [Playbook](docs/engineering/Banking_API_Chaos_Engineering_Playbook.md) · `./scripts/chaos/run-experiments.sh` |
+| Postgres replica (local) | [Replication](docs/engineering/Banking_API_Postgres_Replication.md) · `./scripts/postgres/verify-replication.sh` |
 
 API base: **http://localhost:8080/api/v1**
 

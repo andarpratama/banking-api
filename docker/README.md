@@ -12,6 +12,9 @@ docker-compose -f docker/docker-compose.dev.yml --profile elk up -d
 # Optional chaos fault injector (localhost:8099). Local experiments only.
 docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.chaos.yml --profile chaos up -d
 
+# Optional Postgres hot standby (localhost:5433). App / Flyway stay on :5432.
+docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.replication.yml --profile replication up -d
+
 # Full stack (API + PostgreSQL + Redis + pgAdmin)
 docker-compose -f docker/docker-compose.yml up -d
 
@@ -27,8 +30,10 @@ docker-compose -f docker/docker-compose.prod.yml up -d
 - **docker-compose.yml** - Full stack (API + PostgreSQL + Redis + pgAdmin)
 - **docker-compose.dev.yml** - Development deps (Postgres, Redis, pgAdmin, Jaeger, Prometheus, Grafana; optional ELK via `--profile elk`)
 - **docker-compose.chaos.yml** - Overlay, profile `chaos`: notification HTTP fault injector (`:8099`)
+- **docker-compose.replication.yml** - Overlay, profile `replication`: Postgres primary + async hot standby (`:5433`)
 - **docker-compose.prod.yml** - Production setup
 - **chaos/** - Fault-injector script mounted by the chaos overlay
+- **postgres/replication/** - Primary `pg_hba` / init + replica entrypoint for T-101
 - **.dockerignore** - Files to exclude from build
 - **observability/** - Prometheus scrape + SLO / error-budget rules, Grafana dashboards, local Alertmanager, Logstash pipeline
 
@@ -70,6 +75,7 @@ When running the app locally (e.g., `mvn spring-boot:run -Dspring-boot.run.profi
 - Alertmanager: http://localhost:9093 (error-budget MWMB alerts; empty receiver — no paging)
 - Kibana (optional `--profile elk`): http://localhost:5601 — data view `banking-api-*`
 - Chaos injector (optional `--profile chaos`): http://localhost:8099 — see [Chaos Engineering Playbook](../docs/engineering/Banking_API_Chaos_Engineering_Playbook.md)
+- Postgres replica (optional `--profile replication`): `localhost:5433` (read-only) — see [PostgreSQL replication](../docs/engineering/Banking_API_Postgres_Replication.md)
 
 ## Health Checks
 
@@ -77,6 +83,10 @@ When running the app locally (e.g., `mvn spring-boot:run -Dspring-boot.run.profi
 ```bash
 # Database
 docker-compose -f docker/docker-compose.dev.yml exec postgres psql -U banking_user -d banking_api -c "SELECT 1;"
+
+# Replica (only after --profile replication overlay)
+docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.replication.yml --profile replication \
+  exec postgres-replica psql -U banking_user -d banking_api -c "SELECT pg_is_in_recovery();"
 
 # Redis
 docker-compose -f docker/docker-compose.dev.yml exec redis redis-cli ping

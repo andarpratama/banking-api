@@ -160,5 +160,5 @@ The script **always** `start`s `postgres` and `redis` on exit. It refuses to run
 ## 7. Out of scope (later waves)
 
 - Kubernetes Chaos Mesh / pod kill (needs T-100 manifests)
-- Multi-region partition (T-101 / T-102)
+- Multi-region partition / failover (T-102). Local WAL streaming: [PostgreSQL replication](Banking_API_Postgres_Replication.md) (T-101)
 - Production game days
