@@ -67,6 +67,10 @@ management:
     web:
       exposure:
         include: health, metrics, prometheus
+  health:
+    # Notification CB is non-critical — OPEN must not fail readiness/liveness.
+    circuitbreakers:
+      enabled: false
   tracing:
     sampling:
       probability: ${OTEL_TRACES_SAMPLER_ARG:${OTEL_SAMPLER_ARG:0.1}}
@@ -89,6 +93,23 @@ otel:
     micrometer:
       enabled: true
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: false
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 80
+    instances:
+      notification:
+        baseConfig: default
+
 app:
   jwt:
     secret: ${JWT_SECRET:change-me-dev-only-min-32-chars-long!!}
@@ -108,6 +129,14 @@ app:
     sdk-key: ${LAUNCHDARKLY_SDK_KEY:}
     flags:
       new-account-flow: false
+  notification:
+    # log (default, T-052 stub) | http (POST JSON; wrapped by Resilience4j)
+    provider: ${NOTIFICATION_PROVIDER:log}
+    http:
+      base-url: ${NOTIFICATION_HTTP_BASE_URL:}
+      path: ${NOTIFICATION_HTTP_PATH:/v1/notifications}
+      connect-timeout: ${NOTIFICATION_HTTP_CONNECT_TIMEOUT:1s}
+      read-timeout: ${NOTIFICATION_HTTP_READ_TIMEOUT:2s}
   logging:
     logstash:
       # UDP JSON to local Logstash (compose profile elk). Packets drop if ELK is not running.

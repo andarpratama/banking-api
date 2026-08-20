@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <em>not</em> auto-retry — the client should re-read balances and resubmit if needed.
  *
  * <p>After ledger persistence, publishes a transfer-completed notice via
- * {@link NotificationPublisher} (logging stub until a vendor adapter exists).
+ * {@link NotificationPublisher} (logging stub by default; HTTP vendor is circuit-broken).
  */
 @Service
 public class TransferService {
