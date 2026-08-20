@@ -1,0 +1,26 @@
+# Optional cloud StorageClass examples — NOT listed in kustomization.yaml.
+# PVCs omit storageClassName so the cluster default provisioner is used
+# (Kind/Minikube/Docker Desktop). Uncomment and add to an overlay for cloud disks.
+#
+# ---
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: banking-fast-ssd
+# provisioner: kubernetes.io/aws-ebs
+# parameters:
+#   type: gp3
+# volumeBindingMode: WaitForFirstConsumer
+# allowVolumeExpansion: true
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: banking-storage-notes
+  namespace: banking
+  labels:
+    app: banking-api
+data:
+  guidance: |
+    Omit storageClassName on volumeClaimTemplates to use the cluster default.
+    Cloud examples (gp3 / pd-ssd / Premium_LRS) live in k8s/README.md.
+    Do not use kubernetes.io/no-provisioner without pre-created PersistentVolumes.

@@ -23,6 +23,7 @@ class LogbackSpringXmlTest {
         }
         assertThat(source)
                 .contains("net.logstash.logback.appender.LogstashUdpSocketAppender")
+                .contains("net.logstash.logback.layout.LogstashLayout")
                 .contains("ASYNC_LOGSTASH")
                 .contains("app.logging.logstash.host");
     }

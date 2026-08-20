@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Convenience alias: kubectl apply -k k8s/  →  development overlay
+resources:
+  - overlays/dev

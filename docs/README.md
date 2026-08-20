@@ -141,7 +141,7 @@ docs/
     - Docker & Docker Compose configuration
     - Database migrations with Flyway
     - Production deployment checklist
-    - Kubernetes deployment (if applicable)
+    - Kubernetes deployment (Kustomize overlays in `k8s/`)
     - Health checks and monitoring
     - Chaos experiments (local Compose playbook)
     - Service level objectives (availability, p99, error rate)
