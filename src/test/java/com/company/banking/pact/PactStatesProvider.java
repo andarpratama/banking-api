@@ -72,8 +72,6 @@ public class PactStatesProvider {
 
     public void customerHasValidRefreshToken() {
         customerIsAuthenticated();
-        // JWT iat is second-precision; refresh in the same second reuses the hash and 500s.
-        sleepOneSecond();
     }
 
     public void customerHasActiveAccount() {
@@ -186,15 +184,6 @@ public class PactStatesProvider {
                 now
         );
         return accounts.save(account);
-    }
-
-    private void sleepOneSecond() {
-        try {
-            Thread.sleep(1100);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for distinct JWT iat", ex);
-        }
     }
 
     private void revokeRefreshTokens(String email) {
