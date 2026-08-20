@@ -1,5 +1,7 @@
 package com.company.banking.transaction.presentation;
 
+import com.company.banking.common.presentation.OpenApiExamples;
+import com.company.banking.common.response.ErrorResponse;
 import com.company.banking.transaction.application.DepositRequest;
 import com.company.banking.transaction.application.DepositService;
 import com.company.banking.transaction.application.TransactionResponse;
@@ -10,12 +12,14 @@ import com.company.banking.transaction.application.WithdrawRequest;
 import com.company.banking.transaction.application.WithdrawService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,16 +57,64 @@ public class TransactionController {
             description = "Credits an ACTIVE account and inserts an immutable DEPOSIT ledger row. "
                     + "CUSTOMER may deposit to own accounts only; ADMIN may deposit to any account."
     )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = DepositRequest.class),
+                    examples = @ExampleObject(
+                            name = "Cash deposit",
+                            value = OpenApiExamples.DEPOSIT_REQUEST
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Deposit completed",
-                    content = @Content(schema = @Schema(implementation = TransactionResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = TransactionResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Deposit completed",
+                                    value = OpenApiExamples.DEPOSIT_RESPONSE
+                            )
+                    )
             ),
-            @ApiResponse(responseCode = "400", description = "Invalid amount or validation error"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid amount or validation error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Invalid amount",
+                                    value = OpenApiExamples.ERROR_INVALID_AMOUNT
+                            )
+                    )
+            ),
             @ApiResponse(responseCode = "403", description = "Forbidden - not owner"),
-            @ApiResponse(responseCode = "404", description = "Account not found"),
-            @ApiResponse(responseCode = "409", description = "Account frozen or closed"),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Account not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Account not found",
+                                    value = OpenApiExamples.ERROR_ACCOUNT_NOT_FOUND
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Account frozen or closed",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Account frozen",
+                                    value = OpenApiExamples.ERROR_ACCOUNT_FROZEN
+                            )
+                    )
+            ),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     public ResponseEntity<TransactionResponse> deposit(@Valid @RequestBody DepositRequest request) {
@@ -78,18 +130,53 @@ public class TransactionController {
                     + "WITHDRAW ledger row. CUSTOMER may withdraw from own accounts only; "
                     + "ADMIN may withdraw from any account."
     )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = WithdrawRequest.class),
+                    examples = @ExampleObject(
+                            name = "ATM withdrawal",
+                            value = OpenApiExamples.WITHDRAW_REQUEST
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Withdraw completed",
-                    content = @Content(schema = @Schema(implementation = TransactionResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = TransactionResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Withdraw completed",
+                                    value = OpenApiExamples.WITHDRAW_RESPONSE
+                            )
+                    )
             ),
-            @ApiResponse(responseCode = "400", description = "Invalid amount or validation error"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid amount or validation error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Invalid amount",
+                                    value = OpenApiExamples.ERROR_INVALID_AMOUNT
+                            )
+                    )
+            ),
             @ApiResponse(responseCode = "403", description = "Forbidden - not owner"),
             @ApiResponse(responseCode = "404", description = "Account not found"),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Insufficient balance, account frozen, or account closed"
+                    description = "Insufficient balance, account frozen, or account closed",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Insufficient balance",
+                                    value = OpenApiExamples.ERROR_INSUFFICIENT_BALANCE
+                            )
+                    )
             ),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -108,11 +195,29 @@ public class TransactionController {
                     + "OPTIMISTIC_LOCK_EXCEPTION without server-side retry. "
                     + "CUSTOMER may transfer from own accounts only; ADMIN may transfer from any."
     )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = TransferRequest.class),
+                    examples = @ExampleObject(
+                            name = "Transfer to friend",
+                            value = OpenApiExamples.TRANSFER_REQUEST
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Transfer completed",
-                    content = @Content(schema = @Schema(implementation = TransferResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = TransferResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Transfer completed",
+                                    value = OpenApiExamples.TRANSFER_RESPONSE
+                            )
+                    )
             ),
             @ApiResponse(responseCode = "400", description = "Invalid amount or validation error"),
             @ApiResponse(responseCode = "403", description = "Forbidden - not owner of source"),
@@ -120,7 +225,21 @@ public class TransactionController {
             @ApiResponse(
                     responseCode = "409",
                     description = "Same-account transfer, insufficient balance, frozen/closed, "
-                            + "or optimistic lock conflict"
+                            + "or optimistic lock conflict",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Same account",
+                                            value = OpenApiExamples.ERROR_SAME_ACCOUNT_TRANSFER
+                                    ),
+                                    @ExampleObject(
+                                            name = "Optimistic lock",
+                                            value = OpenApiExamples.ERROR_OPTIMISTIC_LOCK
+                                    )
+                            }
+                    )
             ),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })

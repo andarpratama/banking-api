@@ -1,5 +1,6 @@
 package com.company.banking.transaction.application;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -8,14 +9,18 @@ import java.util.UUID;
 /**
  * Request body for {@code POST /transactions/withdraw}.
  */
+@Schema(description = "Withdraw funds payload")
 public class WithdrawRequest {
 
+    @Schema(example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
     @NotNull(message = "accountId is required")
     private UUID accountId;
 
+    @Schema(example = "300.00")
     @NotNull(message = "amount is required")
     private BigDecimal amount;
 
+    @Schema(example = "ATM withdrawal")
     @Size(max = 255, message = "description must be at most 255 characters")
     private String description;
 

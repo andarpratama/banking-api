@@ -1,11 +1,14 @@
 package com.company.banking.customer.presentation;
 
+import com.company.banking.common.presentation.OpenApiExamples;
+import com.company.banking.common.response.ErrorResponse;
 import com.company.banking.customer.application.CustomerListResponse;
 import com.company.banking.customer.application.CustomerResponse;
 import com.company.banking.customer.application.CustomerService;
 import com.company.banking.customer.application.UpdateCustomerRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -13,7 +16,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,15 +57,30 @@ public class CustomerController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Customers list",
-                    content = @Content(schema = @Schema(implementation = CustomerListResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CustomerListResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Paginated customers",
+                                    value = OpenApiExamples.CUSTOMER_LIST_RESPONSE
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - not ADMIN"
+                    description = "Forbidden - not ADMIN",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Forbidden", value = OpenApiExamples.ERROR_FORBIDDEN)
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - missing or invalid token"
+                    description = "Unauthorized - missing or invalid token",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Unauthorized", value = OpenApiExamples.ERROR_UNAUTHORIZED)
+                    )
             )
     })
     public ResponseEntity<CustomerListResponse> listCustomers(
@@ -90,19 +108,41 @@ public class CustomerController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Customer profile",
-                    content = @Content(schema = @Schema(implementation = CustomerResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CustomerResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Customer profile",
+                                    value = OpenApiExamples.CUSTOMER_RESPONSE
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - no permission"
+                    description = "Forbidden - no permission",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Forbidden", value = OpenApiExamples.ERROR_FORBIDDEN)
+                    )
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Customer not found"
+                    description = "Customer not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Customer not found",
+                                    value = OpenApiExamples.ERROR_CUSTOMER_NOT_FOUND
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized"
+                    description = "Unauthorized",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Unauthorized", value = OpenApiExamples.ERROR_UNAUTHORIZED)
+                    )
             )
     })
     public ResponseEntity<CustomerResponse> getCustomerProfile(@PathVariable UUID customerId) {
@@ -121,11 +161,29 @@ public class CustomerController {
             summary = "Update customer profile",
             description = "ADMIN can update any customer. CUSTOMER can update only their own profile."
     )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = UpdateCustomerRequest.class),
+                    examples = @ExampleObject(
+                            name = "Update profile",
+                            value = OpenApiExamples.UPDATE_CUSTOMER_REQUEST
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Customer updated successfully",
-                    content = @Content(schema = @Schema(implementation = CustomerResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CustomerResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Updated customer",
+                                    value = OpenApiExamples.CUSTOMER_UPDATED_RESPONSE
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -133,15 +191,30 @@ public class CustomerController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - no permission"
+                    description = "Forbidden - no permission",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Forbidden", value = OpenApiExamples.ERROR_FORBIDDEN)
+                    )
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Customer not found"
+                    description = "Customer not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Customer not found",
+                                    value = OpenApiExamples.ERROR_CUSTOMER_NOT_FOUND
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized"
+                    description = "Unauthorized",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Unauthorized", value = OpenApiExamples.ERROR_UNAUTHORIZED)
+                    )
             )
     })
     public ResponseEntity<CustomerResponse> updateCustomer(
@@ -170,15 +243,30 @@ public class CustomerController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - not ADMIN"
+                    description = "Forbidden - not ADMIN",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Forbidden", value = OpenApiExamples.ERROR_FORBIDDEN)
+                    )
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Customer not found"
+                    description = "Customer not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Customer not found",
+                                    value = OpenApiExamples.ERROR_CUSTOMER_NOT_FOUND
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized"
+                    description = "Unauthorized",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(name = "Unauthorized", value = OpenApiExamples.ERROR_UNAUTHORIZED)
+                    )
             )
     })
     public ResponseEntity<Void> deleteCustomer(@PathVariable UUID customerId) {
