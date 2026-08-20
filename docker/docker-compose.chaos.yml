@@ -1,0 +1,34 @@
+# Overlay for T-095 chaos experiments. Merge with docker-compose.dev.yml:
+#   docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.chaos.yml --profile chaos up -d
+# Fault injector listens on localhost:8099 (POST /v1/notifications).
+# Modes: NOTIFICATION_FAULT_MODE=fail | hang | ok
+
+services:
+  notification-fault:
+    image: python:3.12-alpine
+    container_name: banking-notification-fault
+    profiles: ["chaos"]
+    command: ["python", "/fault/server.py"]
+    environment:
+      FAULT_MODE: ${NOTIFICATION_FAULT_MODE:-fail}
+      FAULT_HANG_SECONDS: ${NOTIFICATION_FAULT_HANG_SECONDS:-30}
+      FAULT_PORT: "8099"
+    ports:
+      - "8099:8099"
+    volumes:
+      - ./chaos/notification_fault_server.py:/fault/server.py:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8099/health')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 8
+      start_period: 5s
+    networks:
+      - banking_network
+    restart: "no"
