@@ -80,6 +80,26 @@ services:
       - banking_network
     restart: unless-stopped
 
+  # Alertmanager receives Prometheus error-budget alerts (UI only — no paging).
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: banking-alertmanager-dev
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - banking_network
+    restart: unless-stopped
+
   # Prometheus scrapes the API on the host (mvn spring-boot:run).
   prometheus:
     image: prom/prometheus:v2.55.1
@@ -95,6 +115,9 @@ services:
       - ./observability/prometheus/rules:/etc/prometheus/rules:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      alertmanager:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
       interval: 10s
@@ -193,7 +216,7 @@ services:
       - banking_network
     restart: unless-stopped
 
-  # Grafana on 3001 to avoid CRA/Vite :3000. Provisioned latency, error-rate, and SLO dashboards.
+  # Grafana on 3001 to avoid CRA/Vite :3000. Provisioned latency, error-rate, SLO, and error-budget dashboards.
   grafana:
     image: grafana/grafana:11.4.0
     container_name: banking-grafana-dev

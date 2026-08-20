@@ -6,6 +6,14 @@ global:
 
 rule_files:
   - /etc/prometheus/rules/slo-recording-rules.yml
+  - /etc/prometheus/rules/error-budget-recording-rules.yml
+  - /etc/prometheus/rules/error-budget-alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
 
 scrape_configs:
   - job_name: banking-api

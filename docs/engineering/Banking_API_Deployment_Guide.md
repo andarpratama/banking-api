@@ -723,6 +723,7 @@ Prometheus scrapes `GET /actuator/prometheus` every 10s (JWT and rate limits are
 | HTTP Latency | `banking-http-latency` | p50 / p95 / p99 overall, p99 by URI |
 | HTTP Error Rate | `banking-http-error-rate` | 5xx ratio gauge, 2xx/4xx/5xx rate, 5xx by URI |
 | Service Level Objectives | `banking-slo` | availability / 5xx rate / p99 vs documented SLO targets |
+| Error Budget | `banking-error-budget` | remaining 24h budget, burn vs 1×/6×/14.4×, hours to exhaustion |
 
 ```bash
 docker compose -f docker/docker-compose.dev.yml up -d
@@ -730,9 +731,11 @@ docker compose -f docker/docker-compose.dev.yml up -d
 curl -sf http://localhost:8080/actuator/prometheus | head
 # Grafana: http://localhost:3001  →  Dashboards → Banking API
 # Prometheus targets: http://localhost:9090/targets
+# Prometheus alerts: http://localhost:9090/alerts
+# Alertmanager (no paging): http://localhost:9093
 ```
 
-Histogram buckets are enabled for `http.server.requests` so `histogram_quantile` works. Formal SLOs (availability 99.9%, error rate &lt; 0.1%, p99 &lt; 300 ms, money-path p99 &lt; 200 ms) are defined in [Banking_API_SLO.md](Banking_API_SLO.md). Prometheus evaluates recording rules (`http://localhost:9090/rules`); Grafana `banking-slo` plots SLI vs target. Error-budget tracking is T-097.
+Histogram buckets are enabled for `http.server.requests` so `histogram_quantile` works; SLO buckets include 200 ms / 300 ms for latency error-budget ratios. Formal SLOs (availability 99.9%, error rate &lt; 0.1%, p99 &lt; 300 ms, money-path p99 &lt; 200 ms) are defined in [Banking_API_SLO.md](Banking_API_SLO.md). Error-budget remaining and Google SRE MWMB burn-rate alerts are in [Banking_API_Error_Budget.md](Banking_API_Error_Budget.md). Prometheus evaluates recording + alert rules (`http://localhost:9090/rules`, `/alerts`); Grafana `banking-slo` / `banking-error-budget` plot SLI vs target and remaining budget. Alertmanager (`http://localhost:9093`) is local-only — no paging.
 
 ```
 ┌─ HTTP Latency (Grafana :3001) ─────────────────────────────┐
@@ -748,6 +751,10 @@ Histogram buckets are enabled for `http.server.requests` so `histogram_quantile`
 ┌─ Service Level Objectives (banking-slo) ───────────────────┐
 │  [avail vs 99.9%]  [5xx vs 0.1%]  [p99 vs 300 ms]          │
 │  timeseries + money-path p99 vs 200 ms                     │
+└────────────────────────────────────────────────────────────┘
+┌─ Error Budget (banking-error-budget) ──────────────────────┐
+│  [remaining 24h]  [burn 5m]  [hours to exhaust]            │
+│  burn vs 1× / 6× / 14.4×  ·  latency remaining             │
 └────────────────────────────────────────────────────────────┘
 ```
 

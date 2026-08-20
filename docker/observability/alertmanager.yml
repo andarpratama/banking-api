@@ -1,0 +1,13 @@
+# Local error-budget tracking only. Empty receiver = Alertmanager UI, no paging.
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: local-dev
+  group_by: [alertname, severity, slo]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+
+receivers:
+  - name: local-dev
