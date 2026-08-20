@@ -687,10 +687,11 @@ Atlassian OpenAPI Request Validator (`openapi-request-validator-core`), driven f
 ### Coverage
 - Spec inventory: all v1 paths from `docs/api/Banking_API_OpenAPI_Specification.md` exist in `/v3/api-docs`
 - Interactions: health probes, register, login (200 + 401), get customer, create/get account, deposit
+- Examples: `OpenApiExamplesTest` asserts example JSON constants parse and every mapped controller method has a 2xx `@ExampleObject` (except 204)
 
 ### Running Locally
 ```bash
-mvn -Dtest=OpenApiInteractionSupportTest,OpenApiSchemaValidationTest test
+mvn -Dtest=OpenApiInteractionSupportTest,OpenApiSchemaValidationTest,OpenApiExamplesTest test
 ```
 
 ### In CI

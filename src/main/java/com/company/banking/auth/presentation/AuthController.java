@@ -4,6 +4,7 @@ import com.company.banking.auth.application.AuthService;
 import com.company.banking.auth.application.LoginResponse;
 import com.company.banking.auth.application.RegisterResponse;
 import com.company.banking.auth.application.TokenResponse;
+import com.company.banking.common.presentation.OpenApiExamples;
 import com.company.banking.common.response.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,6 +39,14 @@ public class AuthController {
     @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @SecurityRequirements
     @Operation(summary = "Register customer", description = "Creates a user + customer profile with CUSTOMER role.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = RegisterRequest.class),
+                    examples = @ExampleObject(name = "New customer", value = OpenApiExamples.REGISTER_REQUEST)
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -46,22 +55,20 @@ public class AuthController {
                             schema = @Schema(implementation = RegisterResponse.class),
                             examples = @ExampleObject(
                                     name = "Registered customer",
-                                    value = """
-                                            {
-                                              "id": "550e8400-e29b-41d4-a716-446655440000",
-                                              "email": "customer@example.com",
-                                              "fullName": "John Doe",
-                                              "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-                                              "createdAt": "2026-08-04T12:00:00Z"
-                                            }
-                                            """
+                                    value = OpenApiExamples.REGISTER_RESPONSE
                             )
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Validation error or duplicate email",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Duplicate email",
+                                    value = OpenApiExamples.ERROR_DUPLICATE_EMAIL
+                            )
+                    )
             )
     })
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -78,6 +85,14 @@ public class AuthController {
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @SecurityRequirements
     @Operation(summary = "Login", description = "Returns access + refresh tokens. Password is never returned.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = LoginRequest.class),
+                    examples = @ExampleObject(name = "Customer login", value = OpenApiExamples.LOGIN_REQUEST)
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -86,26 +101,20 @@ public class AuthController {
                             schema = @Schema(implementation = LoginResponse.class),
                             examples = @ExampleObject(
                                     name = "Authenticated session",
-                                    value = """
-                                            {
-                                              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                              "tokenType": "Bearer",
-                                              "expiresIn": 3600,
-                                              "user": {
-                                                "id": "550e8400-e29b-41d4-a716-446655440000",
-                                                "email": "customer@example.com",
-                                                "roles": ["CUSTOMER"]
-                                              }
-                                            }
-                                            """
+                                    value = OpenApiExamples.LOGIN_RESPONSE
                             )
                     )
             ),
             @ApiResponse(
                     responseCode = "401",
                     description = "Invalid credentials",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Invalid credentials",
+                                    value = OpenApiExamples.ERROR_INVALID_CREDENTIALS
+                            )
+                    )
             )
     })
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
@@ -115,16 +124,36 @@ public class AuthController {
     @PostMapping(value = "/refresh", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @SecurityRequirements
     @Operation(summary = "Refresh tokens", description = "Rotates refresh token and issues a new access token.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = RefreshRequest.class),
+                    examples = @ExampleObject(name = "Refresh token", value = OpenApiExamples.REFRESH_REQUEST)
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Tokens rotated",
-                    content = @Content(schema = @Schema(implementation = TokenResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = TokenResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Rotated tokens",
+                                    value = OpenApiExamples.TOKEN_RESPONSE
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
                     description = "Invalid or expired refresh token",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Invalid refresh token",
+                                    value = OpenApiExamples.ERROR_INVALID_TOKEN
+                            )
+                    )
             )
     })
     public TokenResponse refresh(
@@ -143,7 +172,13 @@ public class AuthController {
             @ApiResponse(
                     responseCode = "401",
                     description = "Missing or invalid access token",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Missing access token",
+                                    value = OpenApiExamples.ERROR_UNAUTHORIZED
+                            )
+                    )
             )
     })
     public ResponseEntity<Void> logout(

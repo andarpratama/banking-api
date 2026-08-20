@@ -54,7 +54,7 @@ public class HealthController {
                     schema = @Schema(implementation = HealthResponse.class),
                     examples = @ExampleObject(
                             name = "Application up",
-                            value = "{\"status\":\"UP\"}"
+                            value = OpenApiExamples.HEALTH_UP
                     )
             )
     )
@@ -76,7 +76,7 @@ public class HealthController {
                     schema = @Schema(implementation = HealthResponse.class),
                     examples = @ExampleObject(
                             name = "Application up",
-                            value = "{\"status\":\"UP\"}"
+                            value = OpenApiExamples.HEALTH_UP
                     )
             )
     )
@@ -98,13 +98,21 @@ public class HealthController {
                     schema = @Schema(implementation = HealthStatus.class),
                     examples = @ExampleObject(
                             name = "Ready",
-                            value = "{\"status\":\"UP\",\"database\":\"UP\",\"cache\":\"UP\"}"
+                            value = OpenApiExamples.READINESS_UP
                     )
             )
     )
     @ApiResponse(
             responseCode = "503",
-            description = "Application is not ready (one or more dependencies unhealthy)"
+            description = "Application is not ready (one or more dependencies unhealthy)",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = HealthStatus.class),
+                    examples = @ExampleObject(
+                            name = "Not ready",
+                            value = OpenApiExamples.READINESS_DOWN
+                    )
+            )
     )
     public ResponseEntity<?> readiness() {
         String dbStatus = healthCheckService.checkDatabaseHealth();

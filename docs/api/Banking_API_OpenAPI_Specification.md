@@ -4,6 +4,16 @@
 **Date:** 2026-08-04  
 **Base URL:** `http://localhost:8080/api/v1`
 
+Sample identifiers used throughout request/response examples (documentation only):
+
+| Resource | Example value |
+|----------|----------------|
+| User id | `550e8400-e29b-41d4-a716-446655440000` |
+| Customer id | `7c9e6679-7425-40de-944b-e07fc1f90ae7` |
+| Savings account | `3fa85f64-5717-4562-b3fc-2c963f66afa6` (`ACC-0000001`) |
+| Destination account | `6b8e2c1a-4d5f-4a90-b3c1-9e7d6f5a4b3c` |
+| Transfer reference | `9c8b7a6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d` |
+
 ---
 
 ## 0. System Endpoints
@@ -93,10 +103,10 @@ Request Body:
 
 Response 201 Created:
 {
-  "id": "uuid",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "customer@example.com",
   "fullName": "John Doe",
-  "customerId": "uuid",
+  "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "createdAt": "2026-08-04T12:00:00Z"
 }
 
@@ -105,7 +115,8 @@ Response 400 Bad Request:
   "timestamp": "2026-08-04T12:00:00Z",
   "status": 400,
   "code": "DUPLICATE_EMAIL",
-  "message": "Email already registered"
+  "message": "Email already registered",
+  "path": "/api/v1/auth/register"
 }
 ```
 
@@ -125,12 +136,12 @@ Request Body:
 
 Response 200 OK:
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdXN0b21lckBleGFtcGxlLmNvbSIsInJvbGVzIjpbIkNVU1RPTUVSIl19.example",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdXN0b21lckBleGFtcGxlLmNvbSIsInR5cCI6InJlZnJlc2gifQ.example",
   "tokenType": "Bearer",
   "expiresIn": 3600,
   "user": {
-    "id": "uuid",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "customer@example.com",
     "roles": ["CUSTOMER"]
   }
@@ -157,13 +168,13 @@ Authorization: Bearer {refreshToken}
 
 Request Body:
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdXN0b21lckBleGFtcGxlLmNvbSIsInR5cCI6InJlZnJlc2gifQ.example"
 }
 
 Response 200 OK:
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdXN0b21lckBleGFtcGxlLmNvbSIsInJvbGVzIjpbIkNVU1RPTUVSIl19.example",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdXN0b21lckBleGFtcGxlLmNvbSIsInR5cCI6InJlZnJlc2gifQ.example",
   "tokenType": "Bearer",
   "expiresIn": 3600
 }
@@ -173,7 +184,8 @@ Response 401 Unauthorized:
   "timestamp": "2026-08-04T12:00:00Z",
   "status": 401,
   "code": "INVALID_TOKEN",
-  "message": "Refresh token expired or invalid"
+  "message": "Refresh token expired or invalid",
+  "path": "/api/v1/auth/refresh"
 }
 ```
 
@@ -203,12 +215,13 @@ Response 200 OK:
 {
   "content": [
     {
-      "id": "uuid",
+      "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+      "userId": "550e8400-e29b-41d4-a716-446655440000",
       "customerNumber": "CUST-000001",
       "fullName": "John Doe",
-      "email": "john@example.com",
+      "email": "customer@example.com",
       "phone": "+1-555-0123",
-      "address": "123 Main St",
+      "address": "123 Main St, City, State 12345",
       "status": "ACTIVE",
       "createdAt": "2026-08-04T12:00:00Z",
       "updatedAt": "2026-08-04T12:00:00Z"
@@ -232,12 +245,13 @@ Roles: ADMIN, CUSTOMER (own profile only)
 
 Response 200 OK:
 {
-  "id": "uuid",
+  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
   "customerNumber": "CUST-000001",
   "fullName": "John Doe",
-  "email": "john@example.com",
+  "email": "customer@example.com",
   "phone": "+1-555-0123",
-  "address": "123 Main St",
+  "address": "123 Main St, City, State 12345",
   "status": "ACTIVE",
   "createdAt": "2026-08-04T12:00:00Z",
   "updatedAt": "2026-08-04T12:00:00Z"
@@ -248,7 +262,8 @@ Response 404 Not Found:
   "timestamp": "2026-08-04T12:00:00Z",
   "status": 404,
   "code": "CUSTOMER_NOT_FOUND",
-  "message": "Customer not found"
+  "message": "Customer not found",
+  "path": "/api/v1/customers/7c9e6679-7425-40de-944b-e07fc1f90ae7"
 }
 ```
 
@@ -271,13 +286,15 @@ Request Body:
 
 Response 200 OK:
 {
-  "id": "uuid",
+  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
   "customerNumber": "CUST-000001",
   "fullName": "John Doe Updated",
-  "email": "john@example.com",
+  "email": "customer@example.com",
   "phone": "+1-555-0456",
   "address": "456 Oak Ave",
   "status": "ACTIVE",
+  "createdAt": "2026-08-04T12:00:00Z",
   "updatedAt": "2026-08-04T13:00:00Z"
 }
 ```
@@ -307,7 +324,7 @@ Authorization: Bearer {accessToken}
 
 Request Body:
 {
-  "customerId": "uuid",
+  "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "accountType": "SAVINGS",
   "currency": "USD",
   "initialBalance": 1000.00
@@ -315,15 +332,16 @@ Request Body:
 
 Response 201 Created:
 {
-  "id": "uuid",
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "accountNumber": "ACC-0000001",
-  "customerId": "uuid",
+  "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "accountType": "SAVINGS",
   "currency": "USD",
   "balance": 1000.00,
   "status": "ACTIVE",
-  "version": 1,
-  "createdAt": "2026-08-04T12:00:00Z"
+  "version": 0,
+  "createdAt": "2026-08-04T12:00:00Z",
+  "updatedAt": "2026-08-04T12:00:00Z"
 }
 ```
 
@@ -340,15 +358,16 @@ Response 200 OK:
 {
   "content": [
     {
-      "id": "uuid",
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       "accountNumber": "ACC-0000001",
-      "customerId": "uuid",
+      "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
       "accountType": "SAVINGS",
       "currency": "USD",
       "balance": 5000.50,
       "status": "ACTIVE",
       "version": 10,
-      "createdAt": "2026-08-04T12:00:00Z"
+      "createdAt": "2026-08-04T12:00:00Z",
+      "updatedAt": "2026-08-04T12:10:00Z"
     }
   ],
   "totalElements": 3
@@ -365,15 +384,16 @@ Authorization: Bearer {accessToken}
 
 Response 200 OK:
 {
-  "id": "uuid",
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "accountNumber": "ACC-0000001",
-  "customerId": "uuid",
+  "customerId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "accountType": "SAVINGS",
   "currency": "USD",
   "balance": 5000.50,
   "status": "ACTIVE",
   "version": 10,
-  "createdAt": "2026-08-04T12:00:00Z"
+  "createdAt": "2026-08-04T12:00:00Z",
+  "updatedAt": "2026-08-04T12:10:00Z"
 }
 ```
 
@@ -388,7 +408,7 @@ Roles: ADMIN
 
 Response 200 OK:
 {
-  "id": "uuid",
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "accountNumber": "ACC-0000001",
   "status": "FROZEN",
   "updatedAt": "2026-08-04T13:00:00Z"
@@ -408,7 +428,7 @@ Transitions FROZEN → ACTIVE only. Rejects ACTIVE (400 VALIDATION_ERROR) and CL
 
 Response 200 OK:
 {
-  "id": "uuid",
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "accountNumber": "ACC-0000001",
   "status": "ACTIVE",
   "updatedAt": "2026-08-04T13:05:00Z"
@@ -426,10 +446,10 @@ Roles: ADMIN
 
 Response 200 OK:
 {
-  "id": "uuid",
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "accountNumber": "ACC-0000001",
   "status": "CLOSED",
-  "updatedAt": "2026-08-04T13:00:00Z"
+  "updatedAt": "2026-08-04T13:10:00Z"
 }
 ```
 
@@ -448,15 +468,15 @@ Roles: ADMIN, CUSTOMER (own account only)
 
 Request Body:
 {
-  "accountId": "uuid",
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "amount": 500.00,
   "description": "Cash deposit at ATM"
 }
 
 Response 200 OK:
 {
-  "id": "uuid",
-  "accountId": "uuid",
+  "id": "1a2b3c4d-5e6f-4789-a012-3456789abcde",
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "referenceId": null,
   "transactionType": "DEPOSIT",
   "amount": 500.00,
@@ -467,23 +487,29 @@ Response 200 OK:
 
 Response 400 Bad Request:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 400,
   "code": "INVALID_AMOUNT",
-  "message": "Amount must be greater than zero"
+  "message": "Amount must be greater than zero",
+  "path": "/api/v1/transactions/deposit"
 }
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "ACCOUNT_FROZEN",
-  "message": "Cannot transact on frozen account"
+  "message": "Cannot transact on frozen account",
+  "path": "/api/v1/transactions/deposit"
 }
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "ACCOUNT_CLOSED",
-  "message": "Cannot transact on closed account"
+  "message": "Cannot transact on closed account",
+  "path": "/api/v1/transactions/deposit"
 }
 ```
 
@@ -500,15 +526,15 @@ Roles: ADMIN, CUSTOMER (own account only)
 
 Request Body:
 {
-  "accountId": "uuid",
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "amount": 300.00,
   "description": "ATM withdrawal"
 }
 
 Response 200 OK:
 {
-  "id": "uuid",
-  "accountId": "uuid",
+  "id": "2b3c4d5e-6f70-489a-b123-456789abcdef",
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "referenceId": null,
   "transactionType": "WITHDRAW",
   "amount": 300.00,
@@ -519,30 +545,38 @@ Response 200 OK:
 
 Response 400 Bad Request:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 400,
   "code": "INVALID_AMOUNT",
-  "message": "Amount must be greater than zero"
+  "message": "Amount must be greater than zero",
+  "path": "/api/v1/transactions/withdraw"
 }
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "INSUFFICIENT_BALANCE",
-  "message": "Insufficient balance. Available: 100.00, Requested: 300.00"
+  "message": "Insufficient balance. Available: 100.00, Requested: 300.00",
+  "path": "/api/v1/transactions/withdraw"
 }
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "ACCOUNT_FROZEN",
-  "message": "Cannot transact on frozen account"
+  "message": "Cannot transact on frozen account",
+  "path": "/api/v1/transactions/withdraw"
 }
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "ACCOUNT_CLOSED",
-  "message": "Cannot transact on closed account"
+  "message": "Cannot transact on closed account",
+  "path": "/api/v1/transactions/withdraw"
 }
 ```
 
@@ -559,19 +593,19 @@ Roles: ADMIN, CUSTOMER (own source account only)
 
 Request Body:
 {
-  "sourceAccountId": "uuid-source",
-  "destinationAccountId": "uuid-dest",
+  "sourceAccountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "destinationAccountId": "6b8e2c1a-4d5f-4a90-b3c1-9e7d6f5a4b3c",
   "amount": 250.00,
   "description": "Transfer to friend"
 }
 
 Response 200 OK:
 {
-  "referenceId": "550e8400-e29b-41d4-a716-446655440000",
+  "referenceId": "9c8b7a6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d",
   "sourceTransaction": {
-    "id": "uuid",
-    "accountId": "uuid-source",
-    "referenceId": "550e8400-e29b-41d4-a716-446655440000",
+    "id": "3c4d5e6f-7081-49ab-c234-56789abcdef0",
+    "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "referenceId": "9c8b7a6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d",
     "transactionType": "DEBIT",
     "amount": 250.00,
     "balanceAfter": 4950.50,
@@ -579,9 +613,9 @@ Response 200 OK:
     "createdAt": "2026-08-04T12:10:00Z"
   },
   "destinationTransaction": {
-    "id": "uuid",
-    "accountId": "uuid-dest",
-    "referenceId": "550e8400-e29b-41d4-a716-446655440000",
+    "id": "4d5e6f70-8192-4abc-d345-6789abcdef01",
+    "accountId": "6b8e2c1a-4d5f-4a90-b3c1-9e7d6f5a4b3c",
+    "referenceId": "9c8b7a6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d",
     "transactionType": "CREDIT",
     "amount": 250.00,
     "balanceAfter": 5500.50,
@@ -592,16 +626,20 @@ Response 200 OK:
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "SAME_ACCOUNT_TRANSFER",
-  "message": "Cannot transfer to same account"
+  "message": "Cannot transfer to same account",
+  "path": "/api/v1/transactions/transfer"
 }
 
 Response 409 Conflict:
 {
+  "timestamp": "2026-08-04T12:00:00Z",
   "status": 409,
   "code": "OPTIMISTIC_LOCK_EXCEPTION",
-  "message": "Account was modified by another transaction"
+  "message": "Account was modified by another transaction",
+  "path": "/api/v1/transactions/transfer"
 }
 ```
 
@@ -637,19 +675,19 @@ Response 200 OK:
 {
   "content": [
     {
-      "id": "uuid",
-      "accountId": "uuid",
+      "id": "1a2b3c4d-5e6f-4789-a012-3456789abcde",
+      "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       "referenceId": null,
       "transactionType": "DEPOSIT",
       "amount": 500.00,
       "balanceAfter": 5500.50,
-      "description": "Cash deposit",
+      "description": "Cash deposit at ATM",
       "createdAt": "2026-08-04T12:00:00Z"
     },
     {
-      "id": "uuid",
-      "accountId": "uuid",
-      "referenceId": "550e8400-e29b-41d4-a716-446655440000",
+      "id": "3c4d5e6f-7081-49ab-c234-56789abcdef0",
+      "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "referenceId": "9c8b7a6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d",
       "transactionType": "DEBIT",
       "amount": 250.00,
       "balanceAfter": 5250.50,
@@ -687,7 +725,7 @@ Notes:
 
 Response 200 OK:
 {
-  "accountId": "uuid",
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "accountNumber": "ACC-0000001",
   "statementPeriod": {
     "from": "2026-08-01T00:00:00Z",
@@ -701,12 +739,12 @@ Response 200 OK:
   "totalCredits": 250.00,
   "transactions": [
     {
-      "id": "uuid",
+      "id": "1a2b3c4d-5e6f-4789-a012-3456789abcde",
       "date": "2026-08-01T10:00:00Z",
       "type": "DEPOSIT",
       "amount": 500.00,
       "balance": 5000.50,
-      "description": "Cash deposit"
+      "description": "Cash deposit at ATM"
     }
   ]
 }
@@ -778,7 +816,7 @@ Notes (v1):
 ### 7.1 Get Audit Logs (Admin)
 
 ```
-GET /audit-logs?page=0&size=20&sort=createdAt,desc&actor=john@example.com&endpoint=/transactions/transfer&status=SUCCESS
+GET /audit-logs?page=0&size=20&sort=createdAt,desc&actor=customer@example.com&endpoint=/transactions/transfer&status=SUCCESS
 Authorization: Bearer {accessToken}
 Roles: ADMIN
 
@@ -793,15 +831,15 @@ Response 200 OK:
 {
   "content": [
     {
-      "id": "uuid",
-      "actor": "john@example.com",
+      "id": "0e1f2a3b-4c5d-4678-9abc-def012345678",
+      "actor": "customer@example.com",
       "endpoint": "/transactions/transfer",
       "method": "POST",
       "action": "TRANSFER_MONEY",
       "statusCode": 200,
       "status": "SUCCESS",
       "ipAddress": "192.168.1.100",
-      "payloadHash": "sha256hash...",
+      "payloadHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "createdAt": "2026-08-04T12:10:00Z"
     }
   ],
@@ -866,7 +904,7 @@ Response 200 OK:
 
 ### Headers
 ```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdXN0b21lckBleGFtcGxlLmNvbSIsInJvbGVzIjpbIkNVU1RPTUVSIl19.example
 ```
 
 Response security headers (v1):
@@ -906,6 +944,8 @@ Future versions maintained as `/api/v2`, etc.
 
 Runtime JSON is checked against the springdoc document `GET /v3/api-docs` in `OpenApiSchemaValidationTest` (T-091). That test also asserts every v1 path in this markdown file is present in the generated spec.
 
-Swagger UI examples for health and auth match the samples in §0–§1. Product contract source of truth remains this file; springdoc annotations must stay aligned when endpoints change.
+Swagger UI `@ExampleObject` payloads for all v1 endpoints match the samples in this file (shared identifiers in the header table). Product contract source of truth remains this file; springdoc annotations must stay aligned when endpoints change.
+
+Coverage is asserted by `OpenApiExamplesTest` (JSON example constants parse; every mapped controller method has a 2xx `@ExampleObject` unless the status is 204).
 
 ---

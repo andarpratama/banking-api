@@ -1,9 +1,12 @@
 package com.company.banking.transaction.presentation;
 
+import com.company.banking.common.presentation.OpenApiExamples;
+import com.company.banking.common.response.ErrorResponse;
 import com.company.banking.transaction.application.AccountStatementService;
 import com.company.banking.transaction.application.StatementResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,11 +51,28 @@ public class AccountStatementController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Account statement",
-                    content = @Content(schema = @Schema(implementation = StatementResponse.class))
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = StatementResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Period statement",
+                                    value = OpenApiExamples.STATEMENT_RESPONSE
+                            )
+                    )
             ),
             @ApiResponse(responseCode = "400", description = "Missing or invalid date range"),
             @ApiResponse(responseCode = "403", description = "Forbidden - not owner"),
-            @ApiResponse(responseCode = "404", description = "Account not found"),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Account not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Account not found",
+                                    value = OpenApiExamples.ERROR_ACCOUNT_NOT_FOUND
+                            )
+                    )
+            ),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     public ResponseEntity<StatementResponse> getStatement(
