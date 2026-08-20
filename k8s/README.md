@@ -113,6 +113,12 @@ Then add `secret-sealed.yaml` to the overlay `resources:` list and remove `secre
 
 HPA in prod needs metrics-server. Rolling updates use `maxUnavailable: 0`. PDB allows at most one API pod disruption.
 
+## PostgreSQL HA
+
+The Postgres StatefulSet is a **single primary** (`replicas: 1`). Do not raise that count — extra pods are independent databases, not streaming standbys.
+
+Local multi-region demo (async WAL to a hot standby on `:5433`): [PostgreSQL replication](../docs/engineering/Banking_API_Postgres_Replication.md) and `docker/docker-compose.replication.yml` (profile `replication`). Production intent: CloudNativePG, Patroni, or a managed writer + cross-region replica. Failover is T-102; app read-routing is T-104.
+
 ## Storage
 
 PVCs omit `storageClassName` (cluster default). For cloud disks, patch `volumeClaimTemplates` in the overlay and optionally add a StorageClass — see comments in `k8s/base/storage-class.yaml`.

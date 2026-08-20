@@ -902,11 +902,28 @@ docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.chaos.y
 
 Do not run these experiments against staging or production.
 
+### 6.8 PostgreSQL replication (local Compose)
+
+Async streaming replica (hot standby on `localhost:5433`). The API and Flyway keep using the primary on `localhost:5432`. This is not failover (T-102), not PITR (T-103), and not analytics read-routing (T-104).
+
+Guide + verify: [Banking_API_Postgres_Replication.md](Banking_API_Postgres_Replication.md)
+
+```bash
+docker compose -f docker/docker-compose.dev.yml \
+  -f docker/docker-compose.replication.yml \
+  --profile replication up -d
+./scripts/postgres/verify-replication.sh
+```
+
+The Kubernetes Postgres StatefulSet stays a **single primary** (`replicas: 1`). Extra StatefulSet replicas are not streaming standbys.
+
 ---
 
 ## 7. Backup & Recovery
 
 ### 7.1 PostgreSQL Backup
+
+A streaming replica (T-101) is **not** a backup. Use `pg_dump` / PITR (T-103) for recovery.
 
 ```bash
 # Backup

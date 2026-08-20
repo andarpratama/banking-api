@@ -1,0 +1,71 @@
+# Overlay for T-101 PostgreSQL streaming replication. Merge with docker-compose.dev.yml:
+#   docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.replication.yml --profile replication up -d
+# Primary stays on localhost:5432 (app / Flyway). Replica is read-only on localhost:5433.
+# Local topology simulator (region-a / region-b labels). Not failover (T-102), not read routing (T-104).
+
+services:
+  postgres:
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - hot_standby=on
+      - -c
+      - wal_keep_size=64MB
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+    environment:
+      POSTGRES_REPLICATION_USER: ${POSTGRES_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-change-me-replication}
+      POSTGRES_REPLICATION_SLOT: ${POSTGRES_REPLICATION_SLOT:-region_b_slot}
+    volumes:
+      - ./postgres/replication/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./postgres/replication/00-replication.sh:/docker-entrypoint-initdb.d/00-replication.sh:ro
+    labels:
+      banking.region: region-a
+      banking.role: primary
+
+  postgres-replica:
+    image: postgres:17-alpine
+    container_name: banking-postgres-replica-dev
+    profiles: ["replication"]
+    entrypoint: ["/bin/sh", "/replica-entrypoint.sh"]
+    environment:
+      PRIMARY_HOST: postgres
+      PRIMARY_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-banking_api}
+      POSTGRES_USER: ${POSTGRES_USER:-banking_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SecurePassword123!}
+      POSTGRES_REPLICATION_USER: ${POSTGRES_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-change-me-replication}
+      POSTGRES_REPLICATION_SLOT: ${POSTGRES_REPLICATION_SLOT:-region_b_slot}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_replica_dev_data:/var/lib/postgresql/data
+      - ./postgres/replication/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-banking_user} -d ${POSTGRES_DB:-banking_api}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks:
+      - banking_network
+    restart: unless-stopped
+    labels:
+      banking.region: region-b
+      banking.role: replica
+
+volumes:
+  postgres_replica_dev_data:
+    driver: local
