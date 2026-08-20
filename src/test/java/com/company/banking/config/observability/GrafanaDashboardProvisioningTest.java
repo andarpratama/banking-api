@@ -19,9 +19,11 @@ class GrafanaDashboardProvisioningTest {
         Path latency = DASHBOARDS.resolve("http-latency.json");
         Path errorRate = DASHBOARDS.resolve("http-error-rate.json");
         Path slo = DASHBOARDS.resolve("slo.json");
+        Path errorBudget = DASHBOARDS.resolve("error-budget.json");
         assertThat(latency).exists();
         assertThat(errorRate).exists();
         assertThat(slo).exists();
+        assertThat(errorBudget).exists();
 
         JsonNode latencyJson = MAPPER.readTree(Files.readString(latency));
         assertThat(latencyJson.path("title").asText()).isEqualTo("HTTP Latency");
@@ -49,6 +51,18 @@ class GrafanaDashboardProvisioningTest {
         assertThat(panelExprs(sloJson)).anyMatch(expr -> expr.contains("banking:sli:availability:ratio5m"));
         assertThat(panelExprs(sloJson)).anyMatch(expr -> expr.contains("banking:sli:error_rate:ratio5m"));
         assertThat(panelExprs(sloJson)).anyMatch(expr -> expr.contains("banking:sli:latency_p99:seconds5m"));
+
+        JsonNode errorBudgetJson = MAPPER.readTree(Files.readString(errorBudget));
+        assertThat(errorBudgetJson.path("title").asText()).isEqualTo("Error Budget");
+        assertThat(errorBudgetJson.path("uid").asText()).isEqualTo("banking-error-budget");
+        assertThat(errorBudgetJson.path("panels")).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(panelTitles(errorBudgetJson)).anyMatch(title -> title.toLowerCase().contains("remaining"));
+        assertThat(panelTitles(errorBudgetJson)).anyMatch(title -> title.toLowerCase().contains("burn"));
+        assertThat(panelExprs(errorBudgetJson))
+                .anyMatch(expr -> expr.contains("banking:error_budget:availability:remaining24h"));
+        assertThat(panelExprs(errorBudgetJson))
+                .anyMatch(expr -> expr.contains("banking:error_budget:availability:burn5m"));
+        assertThat(panelExprs(errorBudgetJson)).anyMatch(expr -> expr.contains("14.4"));
     }
 
     private static Stream<String> panelTitles(JsonNode dashboard) {

@@ -30,7 +30,7 @@ docker-compose -f docker/docker-compose.prod.yml up -d
 - **docker-compose.prod.yml** - Production setup
 - **chaos/** - Fault-injector script mounted by the chaos overlay
 - **.dockerignore** - Files to exclude from build
-- **observability/** - Prometheus scrape + SLO recording rules, Grafana dashboards, Logstash pipeline
+- **observability/** - Prometheus scrape + SLO / error-budget rules, Grafana dashboards, local Alertmanager, Logstash pipeline
 
 ## Building Images
 
@@ -65,8 +65,9 @@ When running the app locally (e.g., `mvn spring-boot:run -Dspring-boot.run.profi
 - Postgres: `localhost:5432` (or set `SPRING_DATASOURCE_URL` env var)
 - Redis: `localhost:6379` (or set `SPRING_DATA_REDIS_HOST/PORT` env vars)
 - Jaeger UI: http://localhost:16686 (OTLP gRPC `localhost:4317`)
-- Grafana dashboards: http://localhost:3001 (admin/admin) — HTTP latency, error rate, and SLOs
-- Prometheus: http://localhost:9090 (scrapes `host.docker.internal:8080/actuator/prometheus`; SLO recording rules at `/rules`)
+- Grafana dashboards: http://localhost:3001 (admin/admin) — HTTP latency, error rate, SLOs, and error budget
+- Prometheus: http://localhost:9090 (scrapes `host.docker.internal:8080/actuator/prometheus`; SLO + error-budget rules at `/rules`, alerts at `/alerts`)
+- Alertmanager: http://localhost:9093 (error-budget MWMB alerts; empty receiver — no paging)
 - Kibana (optional `--profile elk`): http://localhost:5601 — data view `banking-api-*`
 - Chaos injector (optional `--profile chaos`): http://localhost:8099 — see [Chaos Engineering Playbook](../docs/engineering/Banking_API_Chaos_Engineering_Playbook.md)
 

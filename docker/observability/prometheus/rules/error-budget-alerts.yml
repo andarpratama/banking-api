@@ -1,0 +1,73 @@
+groups:
+  - name: banking-api-error-budget-alerts
+    interval: 30s
+    rules:
+      # Google SRE workbook MWMB for a 30d 99.9% SLO.
+      # Local TSDB is 24h — 3d/1d ticket windows are documented, not evaluated here.
+      - alert: BankingApiErrorBudgetFastBurn
+        expr: |
+          (
+            banking:error_budget:availability:burn1h > 14.4
+          )
+          and
+          (
+            banking:error_budget:availability:burn5m > 14.4
+          )
+        for: 1m
+        labels:
+          severity: page
+          slo: availability
+        annotations:
+          summary: Availability error budget fast burn (14.4x)
+          description: 1h and 5m burn rates exceed 14.4x the 0.1% budget. Would consume ~2% of a 30-day budget in 1 hour.
+
+      - alert: BankingApiErrorBudgetSlowBurn
+        expr: |
+          (
+            banking:error_budget:availability:burn6h > 6
+          )
+          and
+          (
+            banking:error_budget:availability:burn30m > 6
+          )
+        for: 1m
+        labels:
+          severity: page
+          slo: availability
+        annotations:
+          summary: Availability error budget slow burn (6x)
+          description: 6h and 30m burn rates exceed 6x the 0.1% budget. Would consume ~5% of a 30-day budget in 6 hours.
+
+      - alert: BankingApiErrorBudgetTicket
+        expr: |
+          (
+            banking:error_budget:availability:burn6h > 1
+          )
+          and
+          (
+            banking:error_budget:availability:burn1h > 1
+          )
+        for: 1m
+        labels:
+          severity: ticket
+          slo: availability
+        annotations:
+          summary: Availability error budget elevated (1x)
+          description: Local stand-in for the 3d/6h 1x ticket alert (24h Prometheus retention). Sustained 1x burn exhausts the window by the end of it.
+
+      - alert: BankingApiLatencyBudgetFastBurn
+        expr: |
+          (
+            banking:error_budget:latency:burn1h > 6
+          )
+          and
+          (
+            banking:error_budget:latency:burn5m > 6
+          )
+        for: 1m
+        labels:
+          severity: ticket
+          slo: latency
+        annotations:
+          summary: Latency error budget fast burn (6x)
+          description: More than 1% of successful /api/v1 requests are slower than 300ms at 6x the SLO-03 budget.

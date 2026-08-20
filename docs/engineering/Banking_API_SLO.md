@@ -4,7 +4,7 @@
 **Date:** 2026-08-20  
 **Status:** Local / portfolio contract (not a customer SLA)
 
-These SLOs are the reliability targets for `/api/v1`. They sit on the T-093 Prometheus scrape + Grafana stack. **Error-budget burn-rate alerts are T-097** — this document only defines SLIs, targets, and how to read them.
+These SLOs are the reliability targets for `/api/v1`. They sit on the T-093 Prometheus scrape + Grafana stack. **Error-budget remaining and MWMB burn-rate alerts** are in [Banking_API_Error_Budget.md](Banking_API_Error_Budget.md) (T-097). This document defines SLIs, targets, and how to read them.
 
 Targets align with [Security & Performance](Banking_API_Security_Performance.md) §2.1 (p99 &lt; 300 ms, response max 500 ms) and the Wave 1 money-path note (deposit p99 under 200 ms).
 
@@ -140,7 +140,7 @@ curl -sf http://localhost:8080/actuator/prometheus | head
 
 No traffic → gauges may be empty (`rate()` is zero). That is **not** an SLO miss; wait until the API is serving `/api/v1` requests.
 
-This is **not** an SLA and is **not** wired to paging. T-097 adds error-budget tracking on these same SLIs.
+This is **not** an SLA. Remaining budget and local burn-rate alerts are in [Banking_API_Error_Budget.md](Banking_API_Error_Budget.md) (T-097) — still not production paging.
 
 ---
 
@@ -151,4 +151,4 @@ This is **not** an SLA and is **not** wired to paging. T-097 adds error-budget t
 | Grafana latency / 5xx (raw) | [Deployment Guide](Banking_API_Deployment_Guide.md) § Grafana dashboards |
 | Performance maxima | [Security & Performance](Banking_API_Security_Performance.md) §2.1 |
 | Local fault injection | [Chaos Engineering Playbook](Banking_API_Chaos_Engineering_Playbook.md) |
-| Error budget | Backlog T-097 (not this document) |
+| Error budget | [Banking_API_Error_Budget.md](Banking_API_Error_Budget.md) (T-097) |
