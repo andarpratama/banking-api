@@ -46,11 +46,27 @@ class JwtServiceTest {
     }
 
     @Test
+    void generateAccessToken_consecutiveCalls_shouldProduceDistinctTokens() {
+        String first = jwtService.generateAccessToken(testUser);
+        String second = jwtService.generateAccessToken(testUser);
+
+        assertThat(first).isNotEqualTo(second);
+    }
+
+    @Test
     void generateRefreshToken_shouldCreateValidToken() {
         String token = jwtService.generateRefreshToken(testUser);
 
         assertThat(token).isNotEmpty();
         assertThat(token.split("\\.")).hasSize(3);
+    }
+
+    @Test
+    void generateRefreshToken_consecutiveCalls_shouldProduceDistinctTokens() {
+        String first = jwtService.generateRefreshToken(testUser);
+        String second = jwtService.generateRefreshToken(testUser);
+
+        assertThat(first).isNotEqualTo(second);
     }
 
     @Test

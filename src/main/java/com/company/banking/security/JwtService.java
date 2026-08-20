@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +49,7 @@ public class JwtService {
                 .collect(Collectors.toList());
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString()) // unique jti; iat is second-precision and token_hash is UNIQUE
                 .subject(userDetails.getUsername())
                 .claim("roles", roles)
                 .claim("enabled", userDetails.isEnabled())
