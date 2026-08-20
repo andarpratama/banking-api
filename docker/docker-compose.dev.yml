@@ -92,6 +92,7 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/rules:/etc/prometheus/rules:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -192,7 +193,7 @@ services:
       - banking_network
     restart: unless-stopped
 
-  # Grafana on 3001 to avoid CRA/Vite :3000. Provisioned latency + error-rate dashboards.
+  # Grafana on 3001 to avoid CRA/Vite :3000. Provisioned latency, error-rate, and SLO dashboards.
   grafana:
     image: grafana/grafana:11.4.0
     container_name: banking-grafana-dev
