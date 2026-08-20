@@ -67,6 +67,8 @@ app:
     provider: local
     flags:
       new-account-flow: false
+  notification:
+    provider: log
   cors:
     allowed-origins: http://localhost:3000
     allow-credentials: true

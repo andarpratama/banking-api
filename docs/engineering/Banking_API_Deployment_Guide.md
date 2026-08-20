@@ -786,6 +786,30 @@ Host/port overrides: `LOGSTASH_HOST` / `LOGSTASH_PORT` (see `.env.example`). Pip
 
 If Elasticsearch fails to start on Linux/WSL, raise `vm.max_map_count` (Elastic requires 262144): `sudo sysctl -w vm.max_map_count=262144`.
 
+### 6.6 Resilience — notification circuit breaker
+
+Outbound notification HTTP is wrapped with **Resilience4j** instance `notification`. The default provider is still the logging stub (`NOTIFICATION_PROVIDER=log`); money flows do not call a vendor.
+
+To POST JSON to a vendor:
+
+```bash
+NOTIFICATION_PROVIDER=http
+NOTIFICATION_HTTP_BASE_URL=http://localhost:8099
+# optional:
+# NOTIFICATION_HTTP_PATH=/v1/notifications
+# NOTIFICATION_HTTP_CONNECT_TIMEOUT=1s
+# NOTIFICATION_HTTP_READ_TIMEOUT=2s
+```
+
+Behavior:
+
+- Timeouts, connection errors, and 5xx open the circuit after the failure-rate threshold (see `resilience4j.circuitbreaker` in `application.yml`).
+- 4xx is logged and ignored (payload bug; vendor is reachable).
+- While **OPEN**, calls skip HTTP and fall back to the logging stub. Transfer / other money use cases still succeed.
+- Circuit breaker state is **not** part of Spring health (OPEN must not fail K8s readiness). Metrics still go to `/actuator/prometheus` (`resilience4j.circuitbreaker.*`).
+
+Never put credentials in `NOTIFICATION_HTTP_BASE_URL`.
+
 ---
 
 ## 7. Backup & Recovery
