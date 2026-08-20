@@ -80,7 +80,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | OpenAPI JSON | http://localhost:8080/v3/api-docs |
 | Jaeger UI | http://localhost:16686 |
-| Grafana (latency / error rate) | http://localhost:3001 (admin / admin) |
+| Grafana (latency / error rate / SLO) | http://localhost:3001 (admin / admin) |
 | Prometheus | http://localhost:9090 |
 | Kibana (ELK profile) | http://localhost:5601 |
 | Chaos experiments (local) | [Playbook](docs/engineering/Banking_API_Chaos_Engineering_Playbook.md) · `./scripts/chaos/run-experiments.sh` |

@@ -18,8 +18,10 @@ class GrafanaDashboardProvisioningTest {
     void latencyAndErrorRateDashboardsAreProvisioned() throws Exception {
         Path latency = DASHBOARDS.resolve("http-latency.json");
         Path errorRate = DASHBOARDS.resolve("http-error-rate.json");
+        Path slo = DASHBOARDS.resolve("slo.json");
         assertThat(latency).exists();
         assertThat(errorRate).exists();
+        assertThat(slo).exists();
 
         JsonNode latencyJson = MAPPER.readTree(Files.readString(latency));
         assertThat(latencyJson.path("title").asText()).isEqualTo("HTTP Latency");
@@ -36,6 +38,17 @@ class GrafanaDashboardProvisioningTest {
         assertThat(errorJson.path("panels")).hasSizeGreaterThanOrEqualTo(2);
         assertThat(panelTitles(errorJson)).anyMatch(title -> title.toLowerCase().contains("error rate"));
         assertThat(panelExprs(errorJson)).anyMatch(expr -> expr.contains("status=~\"5..\""));
+
+        JsonNode sloJson = MAPPER.readTree(Files.readString(slo));
+        assertThat(sloJson.path("title").asText()).isEqualTo("Service Level Objectives");
+        assertThat(sloJson.path("uid").asText()).isEqualTo("banking-slo");
+        assertThat(sloJson.path("panels")).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(panelTitles(sloJson)).anyMatch(title -> title.toLowerCase().contains("availability"));
+        assertThat(panelTitles(sloJson)).anyMatch(title -> title.toLowerCase().contains("error rate"));
+        assertThat(panelTitles(sloJson)).anyMatch(title -> title.toLowerCase().contains("p99"));
+        assertThat(panelExprs(sloJson)).anyMatch(expr -> expr.contains("banking:sli:availability:ratio5m"));
+        assertThat(panelExprs(sloJson)).anyMatch(expr -> expr.contains("banking:sli:error_rate:ratio5m"));
+        assertThat(panelExprs(sloJson)).anyMatch(expr -> expr.contains("banking:sli:latency_p99:seconds5m"));
     }
 
     private static Stream<String> panelTitles(JsonNode dashboard) {

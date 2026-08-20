@@ -716,12 +716,13 @@ See `.env.example`: `OTEL_EXPORTER_OTLP_ENDPOINT` (alias `OTEL_JAEGER_ENDPOINT`)
 
 #### Grafana dashboards (latency + error rate)
 
-Prometheus scrapes `GET /actuator/prometheus` every 10s (JWT and rate limits are skipped for that path). Grafana on **http://localhost:3001** (user `admin` / password `admin`) loads two provisioned dashboards:
+Prometheus scrapes `GET /actuator/prometheus` every 10s (JWT and rate limits are skipped for that path). Grafana on **http://localhost:3001** (user `admin` / password `admin`) loads provisioned dashboards:
 
 | Dashboard | UID | What it shows |
 |-----------|-----|----------------|
 | HTTP Latency | `banking-http-latency` | p50 / p95 / p99 overall, p99 by URI |
 | HTTP Error Rate | `banking-http-error-rate` | 5xx ratio gauge, 2xx/4xx/5xx rate, 5xx by URI |
+| Service Level Objectives | `banking-slo` | availability / 5xx rate / p99 vs documented SLO targets |
 
 ```bash
 docker compose -f docker/docker-compose.dev.yml up -d
@@ -731,7 +732,7 @@ curl -sf http://localhost:8080/actuator/prometheus | head
 # Prometheus targets: http://localhost:9090/targets
 ```
 
-Histogram buckets are enabled for `http.server.requests` so `histogram_quantile` works. Deposit p99 target from Wave 1 is under 200ms — use the latency dashboard while reproducing a transfer.
+Histogram buckets are enabled for `http.server.requests` so `histogram_quantile` works. Formal SLOs (availability 99.9%, error rate &lt; 0.1%, p99 &lt; 300 ms, money-path p99 &lt; 200 ms) are defined in [Banking_API_SLO.md](Banking_API_SLO.md). Prometheus evaluates recording rules (`http://localhost:9090/rules`); Grafana `banking-slo` plots SLI vs target. Error-budget tracking is T-097.
 
 ```
 ┌─ HTTP Latency (Grafana :3001) ─────────────────────────────┐
@@ -743,6 +744,10 @@ Histogram buckets are enabled for `http.server.requests` so `histogram_quantile`
 ┌─ HTTP Error Rate ──────────────────────────────────────────┐
 │  [gauge 5xx %]   [2xx / 4xx / 5xx request rate]            │
 │  5xx rate by URI                                           │
+└────────────────────────────────────────────────────────────┘
+┌─ Service Level Objectives (banking-slo) ───────────────────┐
+│  [avail vs 99.9%]  [5xx vs 0.1%]  [p99 vs 300 ms]          │
+│  timeseries + money-path p99 vs 200 ms                     │
 └────────────────────────────────────────────────────────────┘
 ```
 

@@ -144,6 +144,7 @@ docs/
     - Kubernetes deployment (if applicable)
     - Health checks and monitoring
     - Chaos experiments (local Compose playbook)
+    - Service level objectives (availability, p99, error rate)
     - Backup & recovery procedures
     - Troubleshooting guide
     - CI/CD integration examples
@@ -345,6 +346,7 @@ Deployment Guide (Go Live)
 | **How do I make it secure?** | [Security & Performance](./engineering/Banking_API_Security_Performance.md) | Security guidelines |
 | **How do I make it fast?** | [Security & Performance](./engineering/Banking_API_Security_Performance.md) | Performance tuning |
 | **How do I deploy?** | [Deployment Guide](./engineering/Banking_API_Deployment_Guide.md) | Deployment steps |
+| **What are the SLOs?** | [SLO definition](./engineering/Banking_API_SLO.md) | Availability, p99, error rate |
 | **What's the database schema?** | [DDD](./database/Banking_API_Database_Design_Document.md) | Database design |
 
 ---
