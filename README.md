@@ -83,6 +83,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 | Grafana (latency / error rate) | http://localhost:3001 (admin / admin) |
 | Prometheus | http://localhost:9090 |
 | Kibana (ELK profile) | http://localhost:5601 |
+| Chaos experiments (local) | [Playbook](docs/engineering/Banking_API_Chaos_Engineering_Playbook.md) · `./scripts/chaos/run-experiments.sh` |
 
 API base: **http://localhost:8080/api/v1**
 

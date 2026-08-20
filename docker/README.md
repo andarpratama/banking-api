@@ -9,6 +9,9 @@ docker-compose -f docker/docker-compose.dev.yml up -d
 # Optional ELK (Elasticsearch + Logstash + Kibana). Extra ~2.5GB RAM.
 docker-compose -f docker/docker-compose.dev.yml --profile elk up -d
 
+# Optional chaos fault injector (localhost:8099). Local experiments only.
+docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.chaos.yml --profile chaos up -d
+
 # Full stack (API + PostgreSQL + Redis + pgAdmin)
 docker-compose -f docker/docker-compose.yml up -d
 
@@ -23,7 +26,9 @@ docker-compose -f docker/docker-compose.prod.yml up -d
 - **Dockerfile.prod** - Lightweight production image
 - **docker-compose.yml** - Full stack (API + PostgreSQL + Redis + pgAdmin)
 - **docker-compose.dev.yml** - Development deps (Postgres, Redis, pgAdmin, Jaeger, Prometheus, Grafana; optional ELK via `--profile elk`)
+- **docker-compose.chaos.yml** - Overlay, profile `chaos`: notification HTTP fault injector (`:8099`)
 - **docker-compose.prod.yml** - Production setup
+- **chaos/** - Fault-injector script mounted by the chaos overlay
 - **.dockerignore** - Files to exclude from build
 - **observability/** - Prometheus scrape config, Grafana dashboards, Logstash pipeline
 
@@ -63,6 +68,7 @@ When running the app locally (e.g., `mvn spring-boot:run -Dspring-boot.run.profi
 - Grafana dashboards: http://localhost:3001 (admin/admin) — HTTP latency + error rate
 - Prometheus: http://localhost:9090 (scrapes `host.docker.internal:8080/actuator/prometheus`)
 - Kibana (optional `--profile elk`): http://localhost:5601 — data view `banking-api-*`
+- Chaos injector (optional `--profile chaos`): http://localhost:8099 — see [Chaos Engineering Playbook](../docs/engineering/Banking_API_Chaos_Engineering_Playbook.md)
 
 ## Health Checks
 

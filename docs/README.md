@@ -143,6 +143,7 @@ docs/
     - Production deployment checklist
     - Kubernetes deployment (if applicable)
     - Health checks and monitoring
+    - Chaos experiments (local Compose playbook)
     - Backup & recovery procedures
     - Troubleshooting guide
     - CI/CD integration examples

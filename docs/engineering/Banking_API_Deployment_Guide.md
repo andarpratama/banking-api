@@ -810,6 +810,19 @@ Behavior:
 
 Never put credentials in `NOTIFICATION_HTTP_BASE_URL`.
 
+### 6.7 Chaos experiments (local Compose)
+
+Hypothesis-driven fault injection against **local Docker Compose only** (Postgres stop, Redis stop, notification vendor 5xx/timeout). Liveness must stay 200 while readiness returns 503 if Postgres or Redis is down. An open notification circuit breaker must not fail readiness.
+
+Playbook + runner: [Banking_API_Chaos_Engineering_Playbook.md](Banking_API_Chaos_Engineering_Playbook.md)
+
+```bash
+docker compose -f docker/docker-compose.dev.yml -f docker/docker-compose.chaos.yml --profile chaos up -d
+./scripts/chaos/run-experiments.sh
+```
+
+Do not run these experiments against staging or production.
+
 ---
 
 ## 7. Backup & Recovery
